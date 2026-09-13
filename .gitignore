@@ -19,3 +19,6 @@ referencias/
 # OS/editor
 .DS_Store
 Thumbs.db
+
+# Git worktrees (per-plan isolated workspaces)
+.worktrees/
