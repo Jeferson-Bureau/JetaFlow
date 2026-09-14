@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getEmpresa, updateEmpresa } from "@/lib/services/configuracaoService";
-import { ForbiddenError } from "@/lib/errors";
+import { getEmpresa, updateEmpresa, listNumeracoes, updateNumeracao } from "@/lib/services/configuracaoService";
+import { ForbiddenError, NotFoundError } from "@/lib/errors";
 
 describe("configuracaoService — empresa", () => {
   it("blocks OPERADOR", async () => {
@@ -18,5 +18,24 @@ describe("configuracaoService — empresa", () => {
       telefone: "11999998888", whatsappNumero: "11999998888", temaPadrao: "AUTOMATICO",
     });
     expect(updated.razaoSocial).toBe("JETAPRINT LTDA");
+  });
+});
+
+describe("configuracaoService — numeração", () => {
+  it("seeds ORCAMENTO and OS rows on first read", async () => {
+    const rows = await listNumeracoes("ADMIN");
+    expect(rows.map((r) => r.tipoDocumento).sort()).toEqual(["ORCAMENTO", "OS"]);
+  });
+
+  it("updates a numeração row", async () => {
+    await listNumeracoes("ADMIN");
+    const updated = await updateNumeracao("ADMIN", "ORCAMENTO", { prefixo: "ORC", proximoNumero: 42, digitos: 4 });
+    expect(updated.proximoNumero).toBe(42);
+  });
+
+  it("throws NotFoundError for an unknown tipoDocumento", async () => {
+    await expect(
+      updateNumeracao("ADMIN", "INEXISTENTE", { prefixo: "X", proximoNumero: 1, digitos: 4 })
+    ).rejects.toThrow(NotFoundError);
   });
 });

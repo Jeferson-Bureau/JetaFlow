@@ -11,3 +11,11 @@ export const empresaSchema = z.object({
 });
 
 export type EmpresaInput = z.infer<typeof empresaSchema>;
+
+export const numeracaoSchema = z.object({
+  prefixo: z.string().min(1),
+  proximoNumero: z.number().int().positive(),
+  digitos: z.number().int().min(1).max(10),
+});
+
+export type NumeracaoInput = z.infer<typeof numeracaoSchema>;
