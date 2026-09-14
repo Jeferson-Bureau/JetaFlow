@@ -5,6 +5,10 @@ import {
   listarOrcamentos,
   buscarOrcamento,
   atualizarOrcamento,
+  enviarOrcamento,
+  aprovarOrcamento,
+  duplicarOrcamento,
+  estaExpirado,
 } from "@/lib/services/orcamentoService";
 import { ForbiddenError } from "@/lib/errors";
 
@@ -106,5 +110,80 @@ describe("orcamentoService", () => {
     await expect(
       atualizarOrcamento(criado.id, { clienteId: seed.cliente.id, itens: [itemInput] })
     ).rejects.toThrow(ForbiddenError);
+  });
+
+  it("sends an orcamento, moving RASCUNHO to ENVIADO", async () => {
+    const criado = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+    });
+    const enviado = await enviarOrcamento(criado.id);
+    expect(enviado.status).toBe("ENVIADO");
+    expect(enviado.dataEnvio).not.toBeNull();
+  });
+
+  it("rejects approving a RASCUNHO orcamento (must be sent first)", async () => {
+    const criado = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+    });
+    await expect(aprovarOrcamento(criado.id)).rejects.toThrow(ForbiddenError);
+  });
+
+  it("approves a sent orcamento", async () => {
+    const criado = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+    });
+    await enviarOrcamento(criado.id);
+    const aprovado = await aprovarOrcamento(criado.id);
+    expect(aprovado.status).toBe("APROVADO");
+    expect(aprovado.dataAprovacao).not.toBeNull();
+  });
+
+  it("rejects approving an expired orcamento", async () => {
+    const criado = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+    });
+    await enviarOrcamento(criado.id);
+    await prisma.orcamento.update({
+      where: { id: criado.id },
+      data: { createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), validadeDias: 15 },
+    });
+    await expect(aprovarOrcamento(criado.id)).rejects.toThrow("expirado");
+  });
+
+  it("duplicates an orcamento into a fresh RASCUNHO with a new numero", async () => {
+    const original = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{ descricao: "Item original", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+    });
+    await enviarOrcamento(original.id);
+
+    const copia = await duplicarOrcamento(original.id);
+    expect(copia.id).not.toBe(original.id);
+    expect(copia.numero).not.toBe(original.numero);
+    expect(copia.status).toBe("RASCUNHO");
+    expect(copia.dataEnvio).toBeNull();
+    expect(copia.itens).toHaveLength(1);
+    expect(copia.itens[0].descricao).toBe("Item original");
+    expect(copia.itens[0].id).not.toBe(original.itens[0].id);
+  });
+
+  it("estaExpirado is false for an APROVADO orcamento even past validadeDias", async () => {
+    const criado = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+    });
+    await enviarOrcamento(criado.id);
+    const aprovado = await aprovarOrcamento(criado.id);
+    await prisma.orcamento.update({
+      where: { id: criado.id },
+      data: { createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+    });
+    const recarregado = await buscarOrcamento(criado.id);
+    expect(estaExpirado(recarregado)).toBe(false);
+    expect(recarregado.status).toBe("APROVADO");
   });
 });

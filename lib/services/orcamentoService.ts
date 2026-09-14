@@ -137,3 +137,76 @@ export async function atualizarOrcamento(id: string, input: OrcamentoInput): Pro
     });
   });
 }
+
+export function estaExpirado(orcamento: OrcamentoComItens): boolean {
+  if (orcamento.status === "APROVADO") return false;
+  const limite = new Date(orcamento.createdAt);
+  limite.setDate(limite.getDate() + orcamento.validadeDias);
+  return limite < new Date();
+}
+
+export async function enviarOrcamento(id: string): Promise<OrcamentoComItens> {
+  const existente = await buscarOrcamento(id);
+  if (existente.status !== "RASCUNHO") {
+    throw new ForbiddenError("Só é possível enviar um orçamento em rascunho");
+  }
+  return prisma.orcamento.update({
+    where: { id },
+    data: { status: "ENVIADO", dataEnvio: new Date() },
+    include: INCLUDE_ITENS_E_CLIENTE,
+  });
+}
+
+export async function aprovarOrcamento(id: string): Promise<OrcamentoComItens> {
+  const existente = await buscarOrcamento(id);
+  if (existente.status !== "ENVIADO") {
+    throw new ForbiddenError("Só é possível aprovar um orçamento enviado");
+  }
+  if (estaExpirado(existente)) {
+    throw new ForbiddenError("Orçamento expirado não pode ser aprovado");
+  }
+  return prisma.orcamento.update({
+    where: { id },
+    data: { status: "APROVADO", dataAprovacao: new Date() },
+    include: INCLUDE_ITENS_E_CLIENTE,
+  });
+}
+
+export async function duplicarOrcamento(id: string): Promise<OrcamentoComItens> {
+  const original = await buscarOrcamento(id);
+  const numero = await alocarProximoNumero("ORCAMENTO");
+
+  return prisma.orcamento.create({
+    data: {
+      numero,
+      clienteId: original.clienteId,
+      observacoes: original.observacoes,
+      validadeDias: original.validadeDias,
+      itens: {
+        create: original.itens
+          .slice()
+          .sort((a, b) => a.ordem - b.ordem)
+          .map((item) => ({
+            descricao: item.descricao,
+            tipo: item.tipo,
+            substratoId: item.substratoId,
+            larguraCm: item.larguraCm,
+            alturaCm: item.alturaCm,
+            tiragem: item.tiragem,
+            equipamentoId: item.equipamentoId,
+            chapaId: item.chapaId,
+            chapaQuantidade: item.chapaQuantidade,
+            tintaId: item.tintaId,
+            tintaQuantidade: item.tintaQuantidade,
+            acabamentoDescricao: item.acabamentoDescricao,
+            acabamentoCusto: item.acabamentoCusto,
+            margemLucro: item.margemLucro,
+            custoCalculado: item.custoCalculado,
+            precoFinal: item.precoFinal,
+            ordem: item.ordem,
+          })),
+      },
+    },
+    include: INCLUDE_ITENS_E_CLIENTE,
+  });
+}
