@@ -22,3 +22,6 @@ Thumbs.db
 
 # Git worktrees (per-plan isolated workspaces)
 .worktrees/
+
+# Uploaded files
+public/uploads/
