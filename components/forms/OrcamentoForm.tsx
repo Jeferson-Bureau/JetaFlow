@@ -77,7 +77,7 @@ export default function OrcamentoForm({ initial }: { initial?: OrcamentoFormInit
       fetch("/api/clientes").then((r) => (r.ok ? r.json() : Promise.reject())),
       fetch("/api/substratos").then((r) => (r.ok ? r.json() : Promise.reject())),
       fetch("/api/equipamentos").then((r) => (r.ok ? r.json() : Promise.reject())),
-      fetch("/api/configuracoes/parametros").then((r) => (r.ok ? r.json() : Promise.reject())),
+      fetch("/api/parametros-calculo").then((r) => (r.ok ? r.json() : Promise.reject())),
     ])
       .then(([clientesData, substratosData, equipamentosData, parametrosData]) => {
         setClientes(Array.isArray(clientesData) ? clientesData : []);
