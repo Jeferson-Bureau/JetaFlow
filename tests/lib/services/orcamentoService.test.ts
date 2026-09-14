@@ -6,6 +6,7 @@ import {
   buscarOrcamento,
   atualizarOrcamento,
 } from "@/lib/services/orcamentoService";
+import { ForbiddenError } from "@/lib/errors";
 
 async function seedCatalogo() {
   await prisma.numeracaoDocumento.upsert({
@@ -104,6 +105,6 @@ describe("orcamentoService", () => {
 
     await expect(
       atualizarOrcamento(criado.id, { clienteId: seed.cliente.id, itens: [itemInput] })
-    ).rejects.toThrow("Acesso negado");
+    ).rejects.toThrow(ForbiddenError);
   });
 });

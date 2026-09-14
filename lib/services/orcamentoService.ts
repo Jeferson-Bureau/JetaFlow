@@ -119,7 +119,7 @@ export async function buscarOrcamento(id: string): Promise<OrcamentoComItens> {
 export async function atualizarOrcamento(id: string, input: OrcamentoInput): Promise<OrcamentoComItens> {
   const existente = await buscarOrcamento(id);
   if (existente.status === "APROVADO") {
-    throw new ForbiddenError();
+    throw new ForbiddenError("Orçamento aprovado não pode ser editado");
   }
 
   const itensCalculados = await calcularItens(input.itens);
