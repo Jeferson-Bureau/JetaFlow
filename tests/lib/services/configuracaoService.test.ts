@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getEmpresa, updateEmpresa, listNumeracoes, updateNumeracao } from "@/lib/services/configuracaoService";
+import { getEmpresa, updateEmpresa, listNumeracoes, updateNumeracao, getParametros, updateParametros } from "@/lib/services/configuracaoService";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 
 describe("configuracaoService — empresa", () => {
@@ -37,5 +37,19 @@ describe("configuracaoService — numeração", () => {
     await expect(
       updateNumeracao("ADMIN", "INEXISTENTE", { prefixo: "X", proximoNumero: 1, digitos: 4 })
     ).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe("configuracaoService — parâmetros", () => {
+  it("creates the singleton row on first read", async () => {
+    const parametros = await getParametros("ADMIN");
+    expect(parametros.id).toBe(1);
+  });
+
+  it("updates parâmetros for ADMIN", async () => {
+    const updated = await updateParametros("ADMIN", {
+      margemLucroPadrao: 25, custoMaoObraHoraPadrao: 40, percentualCustosIndiretosPadrao: 10,
+    });
+    expect(updated.margemLucroPadrao).toBe(25);
   });
 });

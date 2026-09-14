@@ -19,3 +19,11 @@ export const numeracaoSchema = z.object({
 });
 
 export type NumeracaoInput = z.infer<typeof numeracaoSchema>;
+
+export const parametrosSchema = z.object({
+  margemLucroPadrao: z.number().min(0),
+  custoMaoObraHoraPadrao: z.number().min(0),
+  percentualCustosIndiretosPadrao: z.number().min(0),
+});
+
+export type ParametrosInput = z.infer<typeof parametrosSchema>;
