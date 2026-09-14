@@ -18,11 +18,27 @@ export default function ConfiguracoesPage() {
   const [numeracoes, setNumeracoes] = useState<Numeracao[]>([]);
   const [parametros, setParametros] = useState<Parametros | null>(null);
   const [status, setStatus] = useState("");
+  const [erro, setErro] = useState("");
 
   useEffect(() => {
-    fetch("/api/configuracoes/empresa").then((r) => r.json()).then(setEmpresa);
-    fetch("/api/configuracoes/numeracao").then((r) => r.json()).then(setNumeracoes);
-    fetch("/api/configuracoes/parametros").then((r) => r.json()).then(setParametros);
+    fetch("/api/configuracoes/empresa")
+      .then(async (r) => {
+        const data = await r.json();
+        if (r.ok) setEmpresa(data);
+        else setErro(data?.error ?? "Erro ao carregar");
+      });
+    fetch("/api/configuracoes/numeracao")
+      .then(async (r) => {
+        const data = await r.json();
+        if (r.ok && Array.isArray(data)) setNumeracoes(data);
+        else setErro(data?.error ?? "Erro ao carregar");
+      });
+    fetch("/api/configuracoes/parametros")
+      .then(async (r) => {
+        const data = await r.json();
+        if (r.ok) setParametros(data);
+        else setErro(data?.error ?? "Erro ao carregar");
+      });
   }, []);
 
   async function salvarEmpresa(e: React.FormEvent) {
@@ -74,6 +90,8 @@ export default function ConfiguracoesPage() {
         ))}
         <Link href="/configuracoes/usuarios" className="pb-2 text-sm text-gray-500">Usuários →</Link>
       </div>
+
+      {erro && <p className="mb-4 text-sm text-red-600">{erro}</p>}
 
       {tab === "empresa" && empresa && (
         <form onSubmit={salvarEmpresa} className="max-w-xl space-y-4">

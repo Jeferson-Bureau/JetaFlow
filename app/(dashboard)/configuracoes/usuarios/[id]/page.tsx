@@ -1,8 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import UsuarioForm from "@/components/forms/UsuarioForm";
 import { notFound } from "next/navigation";
+import { getSessionRole, isAdmin } from "@/lib/permissions";
 
 export default async function EditarUsuarioPage({ params }: { params: { id: string } }) {
+  const role = await getSessionRole();
+  if (!isAdmin(role)) notFound();
+
   const usuario = await prisma.user.findUnique({ where: { id: params.id } });
   if (!usuario) notFound();
 

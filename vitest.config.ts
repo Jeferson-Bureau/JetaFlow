@@ -10,7 +10,7 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     globalSetup: ["./tests/global-setup.ts"],
     env: {
-      DATABASE_URL: "file:./prisma/test.db",
+      DATABASE_URL: "file:./test.db",
       NEXTAUTH_SECRET: "test-secret",
     },
   },
