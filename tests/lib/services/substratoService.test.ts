@@ -22,14 +22,16 @@ describe("substratoService", () => {
   it("hides custoUnitario and markup for OPERADOR reads", async () => {
     const created = await createSubstrato("ADMIN", base);
     const found = (await getSubstrato("OPERADOR", created.id)) as Record<string, unknown>;
-    expect(found.custoUnitario).toBeUndefined();
-    expect(found.markup).toBeUndefined();
+    expect(found).not.toHaveProperty("custoUnitario");
+    expect(found).not.toHaveProperty("markup");
     expect(found.nome).toBe("Couché 300g");
   });
 
   it("shows custoUnitario and markup for ADMIN reads", async () => {
     const created = await createSubstrato("ADMIN", base);
     const found = (await getSubstrato("ADMIN", created.id)) as Record<string, unknown>;
+    expect(found).toHaveProperty("custoUnitario");
+    expect(found).toHaveProperty("markup");
     expect(found.custoUnitario).toBe(1.5);
   });
 
