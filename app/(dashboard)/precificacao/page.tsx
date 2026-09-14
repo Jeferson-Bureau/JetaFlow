@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface Substrato { id: string; nome: string; tipo: string; unidadeMedida: string; ativo: boolean; }
+interface Equipamento { id: string; nome: string; tipo: string; formatoMaximo: string; ativo: boolean; }
 
 export default function PrecificacaoPage() {
   const [substratos, setSubstratos] = useState<Substrato[]>([]);
+  const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
 
   useEffect(() => {
     fetch("/api/substratos").then((r) => r.json()).then(setSubstratos);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/equipamentos").then((r) => r.json()).then(setEquipamentos);
   }, []);
 
   return (
@@ -27,6 +33,24 @@ export default function PrecificacaoPage() {
               <td className="py-2">{s.tipo}</td>
               <td className="py-2">{s.unidadeMedida}</td>
               <td className="py-2">{s.ativo ? "Ativo" : "Inativo"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="mt-10 mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-marinho">Equipamentos</h2>
+        <Link href="/precificacao/equipamentos/novo" className="rounded bg-ciano px-4 py-2 text-white">Novo equipamento</Link>
+      </div>
+      <table className="w-full text-left">
+        <thead><tr className="border-b"><th className="py-2">Nome</th><th className="py-2">Tipo</th><th className="py-2">Formato máximo</th><th className="py-2">Status</th></tr></thead>
+        <tbody>
+          {equipamentos.map((e) => (
+            <tr key={e.id} className="border-b hover:bg-gray-50">
+              <td className="py-2"><Link href={`/precificacao/equipamentos/${e.id}`}>{e.nome}</Link></td>
+              <td className="py-2">{e.tipo}</td>
+              <td className="py-2">{e.formatoMaximo}</td>
+              <td className="py-2">{e.ativo ? "Ativo" : "Inativo"}</td>
             </tr>
           ))}
         </tbody>
