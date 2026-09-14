@@ -1,13 +1,22 @@
-import { prisma } from "@/lib/prisma";
+import { getSubstrato } from "@/lib/services/substratoService";
+import { getSessionRole } from "@/lib/permissions";
+import { NotFoundError } from "@/lib/errors";
 import SubstratoForm from "@/components/forms/SubstratoForm";
 import { notFound } from "next/navigation";
 import type { tiposSubstrato } from "@/lib/validators/substrato";
 
 export default async function EditarSubstratoPage({ params }: { params: { id: string } }) {
-  const substrato = await prisma.substrato.findUnique({ where: { id: params.id } });
-  if (!substrato) notFound();
+  const role = await getSessionRole();
+  let substrato;
+  try {
+    substrato = await getSubstrato(role, params.id);
+  } catch (error) {
+    if (error instanceof NotFoundError) notFound();
+    throw error;
+  }
 
-  const atributos = JSON.parse(substrato.atributos) as Record<string, string>;
+  const atributos = substrato.atributos as Record<string, string>;
+  const { custoUnitario, markup } = substrato as { custoUnitario?: number; markup?: number };
 
   return (
     <div>
@@ -16,8 +25,10 @@ export default async function EditarSubstratoPage({ params }: { params: { id: st
         initial={{
           id: substrato.id, nome: substrato.nome, tipo: substrato.tipo as (typeof tiposSubstrato)[number],
           fornecedorId: substrato.fornecedorId ?? "", unidadeMedida: substrato.unidadeMedida,
-          custoUnitario: substrato.custoUnitario.toString(), percentualPerda: substrato.percentualPerda.toString(),
-          markup: substrato.markup.toString(), atributos, ativo: substrato.ativo,
+          custoUnitario: custoUnitario?.toString() ?? "",
+          percentualPerda: substrato.percentualPerda.toString(),
+          markup: markup?.toString() ?? "",
+          atributos, ativo: substrato.ativo,
         }}
       />
     </div>

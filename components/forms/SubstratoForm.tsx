@@ -114,7 +114,11 @@ export default function SubstratoForm({ initial }: { initial?: SubstratoFormValu
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
       <input placeholder="Nome" value={values.nome} onChange={(e) => set("nome", e.target.value)} className="w-full rounded border px-3 py-2" required />
-      <select value={values.tipo} onChange={(e) => set("tipo", e.target.value as SubstratoFormValues["tipo"])} className="w-full rounded border px-3 py-2">
+      <select
+        value={values.tipo}
+        onChange={(e) => setValues((v) => ({ ...v, tipo: e.target.value as SubstratoFormValues["tipo"], atributos: {} }))}
+        className="w-full rounded border px-3 py-2"
+      >
         {tiposSubstrato.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
       </select>
       <Combobox
