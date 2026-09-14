@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
+    setupFiles: ["./tests/setup.ts"],
+    globalSetup: ["./tests/global-setup.ts"],
+    env: {
+      DATABASE_URL: "file:./prisma/test.db",
+      NEXTAUTH_SECRET: "test-secret",
+    },
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, ".") },

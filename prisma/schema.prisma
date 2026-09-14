@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  role      String   @default("OPERADOR")
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cliente {
+  id             String   @id @default(cuid())
+  tipo           String
+  nome           String
+  documento      String   @unique
+  ie             String?
+  telefone       String?
+  email          String?
+  cep            String?
+  endereco       String?
+  numero         String?
+  complemento    String?
+  bairro         String?
+  cidade         String?
+  uf             String?
+  prazoPagamento Int?
+  observacoes    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Fornecedor {
+  id          String      @id @default(cuid())
+  razaoSocial String
+  cnpj        String      @unique
+  contato     String?
+  telefone    String?
+  email       String?
+  cep         String?
+  endereco    String?
+  numero      String?
+  complemento String?
+  bairro      String?
+  cidade      String?
+  uf          String?
+  categoria   String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  substratos  Substrato[]
+}
+
+model Substrato {
+  id              String      @id @default(cuid())
+  nome            String
+  tipo            String
+  fornecedorId    String?
+  fornecedor      Fornecedor? @relation(fields: [fornecedorId], references: [id])
+  unidadeMedida   String
+  custoUnitario   Float
+  percentualPerda Float       @default(0)
+  markup          Float       @default(0)
+  atributos       String
+  ativo           Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Equipamento {
+  id                    String   @id @default(cuid())
+  nome                  String
+  tipo                  String
+  velocidade            Float
+  unidadeVelocidade     String
+  formatoMaximo         String
+  custoHora             Float
+  tempoSetupMin         Int
+  percentualPerda       Float    @default(0)
+  acabamentosSuportados String
+  ativo                 Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model ConfiguracaoGeral {
+  id             Int      @id @default(1)
+  razaoSocial    String   @default("")
+  cnpj           String   @default("")
+  ie             String   @default("")
+  endereco       String   @default("")
+  telefone       String   @default("")
+  logoUrl        String?
+  whatsappNumero String   @default("")
+  temaPadrao     String   @default("AUTOMATICO")
+  updatedAt      DateTime @updatedAt
+}
+
+model NumeracaoDocumento {
+  id            String @id @default(cuid())
+  tipoDocumento String @unique
+  prefixo       String
+  proximoNumero Int    @default(1)
+  digitos       Int    @default(4)
+}
+
+model ParametroCalculo {
+  id                              Int      @id @default(1)
+  margemLucroPadrao               Float    @default(0)
+  custoMaoObraHoraPadrao          Float    @default(0)
+  percentualCustosIndiretosPadrao Float    @default(0)
+  updatedAt                       DateTime @updatedAt
+}
