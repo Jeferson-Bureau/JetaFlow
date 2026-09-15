@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import OrdemServicoEstagioBadge from "@/components/OrdemServicoEstagioBadge";
+import { ESTAGIOS_OS } from "@/lib/services/ordemServicoCalculo";
 
 interface ItemResumo {
   id: string;
@@ -94,7 +95,7 @@ export default function OrdemServicoDetalheClient({
       <div className="mb-6 flex gap-2">
         <button
           type="button"
-          disabled={carregando || estagio === "ARQUIVO_RECEBIDO"}
+          disabled={carregando || estagio === ESTAGIOS_OS[0]}
           onClick={() => avancarOuVoltar("voltar")}
           className="rounded border px-3 py-2 text-sm disabled:opacity-50"
         >
@@ -102,7 +103,7 @@ export default function OrdemServicoDetalheClient({
         </button>
         <button
           type="button"
-          disabled={carregando || estagio === "CONCLUIDO"}
+          disabled={carregando || estagio === ESTAGIOS_OS[ESTAGIOS_OS.length - 1]}
           onClick={() => avancarOuVoltar("avancar")}
           className="rounded bg-ciano px-3 py-2 text-sm text-white disabled:opacity-50"
         >

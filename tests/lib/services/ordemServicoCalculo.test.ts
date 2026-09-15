@@ -29,4 +29,9 @@ describe("estaAtrasada", () => {
     const ontem = new Date(Date.now() - 24 * 60 * 60 * 1000);
     expect(estaAtrasada("CONCLUIDO", ontem)).toBe(false);
   });
+
+  it("is false when prazoEntrega is today (not yet past end of day)", () => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    expect(estaAtrasada("PRODUCAO", hoje)).toBe(false);
+  });
 });

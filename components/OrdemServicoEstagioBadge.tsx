@@ -1,6 +1,6 @@
-import { estaAtrasada } from "@/lib/services/ordemServicoCalculo";
+import { ESTAGIOS_OS, estaAtrasada } from "@/lib/services/ordemServicoCalculo";
 
-const LABELS: Record<string, string> = {
+const LABELS: Record<(typeof ESTAGIOS_OS)[number], string> = {
   ARQUIVO_RECEBIDO: "Arquivo recebido",
   PRE_IMPRESSAO: "Pré-impressão",
   PRODUCAO: "Produção",
@@ -25,7 +25,7 @@ export default function OrdemServicoEstagioBadge({
         atrasada ? "bg-rosa" : "bg-ciano"
       }`}
     >
-      {LABELS[estagio] ?? estagio}
+      {LABELS[estagio as (typeof ESTAGIOS_OS)[number]] ?? estagio}
       {atrasada && " — Atrasada"}
     </span>
   );

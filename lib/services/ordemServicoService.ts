@@ -4,11 +4,16 @@ import { buscarOrcamento } from "@/lib/services/orcamentoService";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { ESTAGIOS_OS } from "@/lib/services/ordemServicoCalculo";
 import type { OrdemServicoInput } from "@/lib/validators/ordemServico";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 const INCLUDE_ORCAMENTO_COMPLETO = {
   orcamento: {
-    include: { cliente: true, itens: true },
+    include: {
+      cliente: true,
+      itens: {
+        select: { id: true, descricao: true, tiragem: true, precoFinal: true, ordem: true },
+      },
+    },
   },
 } satisfies Prisma.OrdemServicoInclude;
 
@@ -29,10 +34,20 @@ export async function converterEmOS(orcamentoId: string): Promise<OrdemServicoCo
 
   const numero = await alocarProximoNumero("OS");
 
-  return prisma.ordemServico.create({
-    data: { numero, orcamentoId },
-    include: INCLUDE_ORCAMENTO_COMPLETO,
-  });
+  // A losing concurrent call may still burn a number here (see alocarProximoNumero) —
+  // accepted: SQLite single-writer makes the race window negligible, and this catch
+  // at least turns it into the correct user-facing error instead of a raw 409.
+  try {
+    return await prisma.ordemServico.create({
+      data: { numero, orcamentoId },
+      include: INCLUDE_ORCAMENTO_COMPLETO,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new ForbiddenError("Este orçamento já foi convertido em OS");
+    }
+    throw error;
+  }
 }
 
 export async function listarOrdensServico(search?: string): Promise<OrdemServicoComOrcamento[]> {
@@ -63,12 +78,16 @@ export async function atualizarOrdemServico(
   input: OrdemServicoInput
 ): Promise<OrdemServicoComOrcamento> {
   await buscarOrdemServico(id);
+  const data: Prisma.OrdemServicoUpdateInput = {};
+  if (input.prazoEntrega !== undefined) {
+    data.prazoEntrega = input.prazoEntrega ? new Date(input.prazoEntrega) : null;
+  }
+  if (input.observacoes !== undefined) {
+    data.observacoes = input.observacoes;
+  }
   return prisma.ordemServico.update({
     where: { id },
-    data: {
-      prazoEntrega: input.prazoEntrega ? new Date(input.prazoEntrega) : null,
-      observacoes: input.observacoes ?? null,
-    },
+    data,
     include: INCLUDE_ORCAMENTO_COMPLETO,
   });
 }

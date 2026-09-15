@@ -11,5 +11,7 @@ export const ESTAGIOS_OS = [
 
 export function estaAtrasada(estagio: string, prazoEntrega: Date | string | null): boolean {
   if (estagio === "CONCLUIDO" || !prazoEntrega) return false;
-  return new Date(prazoEntrega) < new Date();
+  const limite = new Date(prazoEntrega);
+  limite.setUTCHours(23, 59, 59, 999);
+  return limite < new Date();
 }

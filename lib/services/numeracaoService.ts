@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-const PREFIXOS_PADRAO: Record<string, string> = {
+export const PREFIXOS_PADRAO: Record<string, string> = {
   ORCAMENTO: "ORC",
   OS: "OS",
 };

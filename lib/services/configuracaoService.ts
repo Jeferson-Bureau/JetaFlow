@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/permissions";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
+import { PREFIXOS_PADRAO } from "@/lib/services/numeracaoService";
 import type { Role } from "@/lib/types";
 import type { EmpresaInput, NumeracaoInput, ParametrosInput } from "@/lib/validators/configuracao";
 
@@ -29,7 +30,7 @@ export async function listNumeracoes(role: Role | null) {
     await prisma.numeracaoDocumento.upsert({
       where: { tipoDocumento: tipo },
       update: {},
-      create: { tipoDocumento: tipo, prefixo: tipo === "ORCAMENTO" ? "ORC" : "OS", proximoNumero: 1, digitos: 4 },
+      create: { tipoDocumento: tipo, prefixo: PREFIXOS_PADRAO[tipo] ?? tipo, proximoNumero: 1, digitos: 4 },
     });
   }
   return prisma.numeracaoDocumento.findMany({ orderBy: { tipoDocumento: "asc" } });
