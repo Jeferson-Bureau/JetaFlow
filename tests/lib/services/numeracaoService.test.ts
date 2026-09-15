@@ -27,4 +27,14 @@ describe("alocarProximoNumero", () => {
     const numero = await alocarProximoNumero("ORCAMENTO");
     expect(numero).toBe("ORC099");
   });
+
+  it("creates the row with the known default prefix for OS when it doesn't exist yet", async () => {
+    const numero = await alocarProximoNumero("OS");
+    expect(numero).toBe("OS0001");
+  });
+
+  it("creates the row with a fallback prefix (the tipoDocumento itself) when no default is known", async () => {
+    const numero = await alocarProximoNumero("TIPO_DESCONHECIDO");
+    expect(numero).toBe("TIPO_DESCONHECIDO0001");
+  });
 });
