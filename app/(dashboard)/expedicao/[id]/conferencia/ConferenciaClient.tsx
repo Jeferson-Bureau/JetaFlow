@@ -29,19 +29,23 @@ export default function ConferenciaClient({
   async function bipar(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
-    const response = await fetch(`/api/expedicao/${expedicaoId}/conferir`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ codigoInterno: codigo }),
-    });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setErro(data.details?.[0]?.message ?? data.error ?? "Erro ao conferir volume");
-      return;
+    try {
+      const response = await fetch(`/api/expedicao/${expedicaoId}/conferir`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigoInterno: codigo }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setErro(data.details?.[0]?.message ?? data.error ?? "Erro ao conferir volume");
+        return;
+      }
+      setCodigo("");
+      router.refresh();
+      inputRef.current?.focus();
+    } catch {
+      setErro("Erro ao conferir volume — verifique sua conexão");
     }
-    setCodigo("");
-    router.refresh();
-    inputRef.current?.focus();
   }
 
   return (
