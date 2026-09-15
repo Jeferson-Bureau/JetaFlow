@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import OrcamentoForm, { type OrcamentoFormInitial } from "@/components/forms/OrcamentoForm";
@@ -12,6 +13,7 @@ interface OrcamentoDetalheClientProps {
   createdAt: string;
   validadeDias: number;
   total: number;
+  ordemServicoId: string | null;
   clienteNome: string;
   clienteTelefone: string | null;
   initial: OrcamentoFormInitial;
@@ -24,6 +26,7 @@ export default function OrcamentoDetalheClient({
   createdAt,
   validadeDias,
   total,
+  ordemServicoId,
   clienteNome,
   clienteTelefone,
   initial,
@@ -61,6 +64,22 @@ export default function OrcamentoDetalheClient({
     );
     window.open(`https://wa.me/${telefoneDigits}?text=${mensagem}`, "_blank");
     chamarAcao("enviar");
+  }
+
+  async function converterEmOS() {
+    setErro("");
+    setCarregando(true);
+    const response = await fetch(`/api/orcamentos/${id}/converter-os`, { method: "POST" });
+    setCarregando(false);
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setErro(data.error ?? "Erro ao converter em OS");
+      return;
+    }
+
+    const os = await response.json();
+    router.push(`/ordens-servico/${os.id}`);
   }
 
   return (
@@ -104,6 +123,24 @@ export default function OrcamentoDetalheClient({
           >
             Duplicar
           </button>
+          {status === "APROVADO" &&
+            (ordemServicoId ? (
+              <Link
+                href={`/ordens-servico/${ordemServicoId}`}
+                className="rounded border border-ciano px-3 py-2 text-sm text-ciano"
+              >
+                Ver OS
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled={carregando}
+                onClick={converterEmOS}
+                className="rounded bg-ciano px-3 py-2 text-sm text-white"
+              >
+                Converter em OS
+              </button>
+            ))}
         </div>
       </div>
 

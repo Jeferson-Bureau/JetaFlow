@@ -22,6 +22,7 @@ export default async function OrcamentoDetalhePage({ params }: { params: { id: s
       createdAt={orcamento.createdAt.toISOString()}
       validadeDias={orcamento.validadeDias}
       total={total}
+      ordemServicoId={orcamento.ordemServico?.id ?? null}
       clienteTelefone={orcamento.cliente.telefone}
       clienteNome={orcamento.cliente.nome}
       initial={{
