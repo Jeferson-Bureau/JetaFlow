@@ -4,6 +4,9 @@ import {
   converterEmOS,
   listarOrdensServico,
   buscarOrdemServico,
+  avancarEstagio,
+  voltarEstagio,
+  atualizarOrdemServico,
 } from "@/lib/services/ordemServicoService";
 
 async function seedOrcamentoAprovado(overrides: { status?: string } = {}) {
@@ -62,5 +65,65 @@ describe("ordemServicoService", () => {
 
   it("throws NotFoundError for a missing ordem de servico", async () => {
     await expect(buscarOrdemServico("id-inexistente")).rejects.toThrow("Não encontrado");
+  });
+
+  it("advances an OS through the full 8-stage sequence", async () => {
+    const orcamento = await seedOrcamentoAprovado();
+    const os = await converterEmOS(orcamento.id);
+
+    const sequenciaEsperada = [
+      "PRE_IMPRESSAO", "PRODUCAO", "ACABAMENTO", "CONFERENCIA",
+      "EMBALAGEM", "EXPEDICAO", "CONCLUIDO",
+    ];
+
+    let atual = os;
+    for (const esperado of sequenciaEsperada) {
+      atual = await avancarEstagio(atual.id);
+      expect(atual.estagio).toBe(esperado);
+    }
+  });
+
+  it("rejects advancing past CONCLUIDO", async () => {
+    const orcamento = await seedOrcamentoAprovado();
+    let os = await converterEmOS(orcamento.id);
+    for (let i = 0; i < 7; i++) {
+      os = await avancarEstagio(os.id);
+    }
+    expect(os.estagio).toBe("CONCLUIDO");
+    await expect(avancarEstagio(os.id)).rejects.toThrow(
+      "Ordem de serviço já está no último estágio"
+    );
+  });
+
+  it("reverts an OS to the previous stage", async () => {
+    const orcamento = await seedOrcamentoAprovado();
+    const os = await converterEmOS(orcamento.id);
+    const avancada = await avancarEstagio(os.id);
+    expect(avancada.estagio).toBe("PRE_IMPRESSAO");
+
+    const revertida = await voltarEstagio(avancada.id);
+    expect(revertida.estagio).toBe("ARQUIVO_RECEBIDO");
+  });
+
+  it("rejects reverting past ARQUIVO_RECEBIDO", async () => {
+    const orcamento = await seedOrcamentoAprovado();
+    const os = await converterEmOS(orcamento.id);
+    await expect(voltarEstagio(os.id)).rejects.toThrow(
+      "Ordem de serviço já está no primeiro estágio"
+    );
+  });
+
+  it("updates prazoEntrega and observacoes without touching estagio", async () => {
+    const orcamento = await seedOrcamentoAprovado();
+    const os = await converterEmOS(orcamento.id);
+
+    const atualizada = await atualizarOrdemServico(os.id, {
+      prazoEntrega: "2026-12-25",
+      observacoes: "Entregar antes do meio-dia",
+    });
+
+    expect(atualizada.observacoes).toBe("Entregar antes do meio-dia");
+    expect(atualizada.prazoEntrega?.toISOString().slice(0, 10)).toBe("2026-12-25");
+    expect(atualizada.estagio).toBe("ARQUIVO_RECEBIDO");
   });
 });
