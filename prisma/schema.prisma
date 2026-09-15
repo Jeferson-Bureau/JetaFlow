@@ -180,4 +180,31 @@ model OrdemServico {
   observacoes  String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  expedicao    Expedicao?
+}
+
+model Expedicao {
+  id             String       @id @default(cuid())
+  ordemServicoId String       @unique
+  ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  cep            String?
+  endereco       String?
+  numero         String?
+  complemento    String?
+  bairro         String?
+  cidade         String?
+  uf             String?
+  totalVolumes   Int
+  createdAt      DateTime     @default(now())
+  volumes        Volume[]
+}
+
+model Volume {
+  id            String    @id @default(cuid())
+  expedicaoId   String
+  expedicao     Expedicao @relation(fields: [expedicaoId], references: [id], onDelete: Cascade)
+  numero        Int
+  codigoInterno String    @unique
+  conferido     Boolean   @default(false)
+  conferidoEm   DateTime?
 }
