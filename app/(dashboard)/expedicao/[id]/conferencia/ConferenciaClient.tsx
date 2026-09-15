@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { calcularProgressoConferencia } from "@/lib/services/expedicaoCalculo";
 
 interface VolumeItem {
@@ -14,9 +15,15 @@ interface VolumeItem {
 
 export default function ConferenciaClient({
   expedicaoId,
+  ordemServicoId,
+  numeroOS,
+  clienteNome,
   volumes,
 }: {
   expedicaoId: string;
+  ordemServicoId: string;
+  numeroOS: string;
+  clienteNome: string;
   volumes: VolumeItem[];
 }) {
   const router = useRouter();
@@ -50,7 +57,15 @@ export default function ConferenciaClient({
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-semibold text-marinho">Conferência de Expedição</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-marinho">
+          Conferência de Expedição — OS {numeroOS}
+        </h1>
+        <Link href={`/ordens-servico/${ordemServicoId}`} className="text-sm text-ciano">
+          Voltar para a OS
+        </Link>
+      </div>
+      <p className="mb-4 text-sm text-gray-600">{clienteNome}</p>
 
       <p className="mb-4 text-sm text-gray-600">
         {progresso.conferidos} de {progresso.total} volumes conferidos

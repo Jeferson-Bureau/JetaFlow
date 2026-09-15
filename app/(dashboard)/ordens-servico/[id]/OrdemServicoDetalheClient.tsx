@@ -90,19 +90,24 @@ export default function OrdemServicoDetalheClient({
   async function gerarEtiquetas() {
     setErroExpedicao("");
     setCarregandoExpedicao(true);
-    const response = await fetch(`/api/ordens-servico/${id}/expedicao`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(expedicaoForm),
-    });
-    setCarregandoExpedicao(false);
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setErroExpedicao(data.details?.[0]?.message ?? data.error ?? "Erro ao gerar etiquetas");
-      return;
+    try {
+      const response = await fetch(`/api/ordens-servico/${id}/expedicao`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(expedicaoForm),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setErroExpedicao(data.details?.[0]?.message ?? data.error ?? "Erro ao gerar etiquetas");
+        return;
+      }
+      setMostrarFormExpedicao(false);
+      router.refresh();
+    } catch {
+      setErroExpedicao("Erro ao gerar etiquetas — verifique sua conexão");
+    } finally {
+      setCarregandoExpedicao(false);
     }
-    setMostrarFormExpedicao(false);
-    router.refresh();
   }
 
   async function avancarOuVoltar(acao: "avancar" | "voltar") {

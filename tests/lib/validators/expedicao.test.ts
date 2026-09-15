@@ -18,6 +18,14 @@ describe("expedicaoInputSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("rejects totalVolumes above the 500 cap", () => {
+    expect(expedicaoInputSchema.safeParse({ totalVolumes: 501 }).success).toBe(false);
+  });
+
+  it("accepts totalVolumes at the 500 cap", () => {
+    expect(expedicaoInputSchema.safeParse({ totalVolumes: 500 }).success).toBe(true);
+  });
 });
 
 describe("conferirVolumeInputSchema", () => {
@@ -27,5 +35,13 @@ describe("conferirVolumeInputSchema", () => {
 
   it("rejects an empty codigoInterno", () => {
     expect(conferirVolumeInputSchema.safeParse({ codigoInterno: "" }).success).toBe(false);
+  });
+
+  it("trims whitespace from codigoInterno", () => {
+    const result = conferirVolumeInputSchema.safeParse({ codigoInterno: "  OS0001-01  " });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.codigoInterno).toBe("OS0001-01");
+    }
   });
 });
