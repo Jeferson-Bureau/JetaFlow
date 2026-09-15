@@ -139,6 +139,7 @@ model Orcamento {
   itens         OrcamentoItem[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  ordemServico  OrdemServico?
 }
 
 model OrcamentoItem {
@@ -166,4 +167,17 @@ model OrcamentoItem {
   custoCalculado      Float
   precoFinal          Float
   ordem               Int
+}
+
+model OrdemServico {
+  id           String    @id @default(cuid())
+  numero       String    @unique
+  orcamentoId  String    @unique
+  orcamento    Orcamento @relation(fields: [orcamentoId], references: [id], onDelete: Restrict)
+  estagio      String    @default("ARQUIVO_RECEBIDO")
+  estagioDesde DateTime  @default(now())
+  prazoEntrega DateTime?
+  observacoes  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }

@@ -13,6 +13,7 @@ import { Prisma } from "@prisma/client";
 const INCLUDE_ITENS_E_CLIENTE = {
   itens: true,
   cliente: true,
+  ordemServico: true,
 } satisfies Prisma.OrcamentoInclude;
 
 export type OrcamentoComItens = Prisma.OrcamentoGetPayload<{
