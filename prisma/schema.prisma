@@ -208,3 +208,31 @@ model Volume {
   conferido     Boolean   @default(false)
   conferidoEm   DateTime?
 }
+
+model Licitacao {
+  id                       String    @id @default(cuid())
+  numeroControlePNCP       String    @unique
+  cnpjOrgao                String
+  anoCompra                Int
+  sequencialCompra         Int
+
+  orgaoNome                String
+  unidadeNome              String
+  numeroCompra             String
+  objetoCompra             String
+  modalidadeNome           String
+  situacaoCompraNome       String
+  valorTotalEstimado       Float?
+  valorTotalHomologado     Float?
+  dataAberturaProposta     DateTime?
+  dataEncerramentoProposta DateTime?
+  dataAtualizacaoPNCP      DateTime
+
+  statusInterno            String    @default("ANALISANDO")
+  valorProposta            Float?
+  responsavel              String?
+  observacoes              String?
+
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+}
