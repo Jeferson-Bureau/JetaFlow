@@ -1,0 +1,66 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { prisma } from "@/lib/prisma";
+import {
+  converterEmOS,
+  listarOrdensServico,
+  buscarOrdemServico,
+} from "@/lib/services/ordemServicoService";
+
+async function seedOrcamentoAprovado(overrides: { status?: string } = {}) {
+  await prisma.numeracaoDocumento.upsert({
+    where: { tipoDocumento: "OS" },
+    update: { prefixo: "OS", proximoNumero: 1, digitos: 4 },
+    create: { tipoDocumento: "OS", prefixo: "OS", proximoNumero: 1, digitos: 4 },
+  });
+  const cliente = await prisma.cliente.create({
+    data: { tipo: "PJ", nome: "Cliente Teste", documento: "00000000000191" },
+  });
+  return prisma.orcamento.create({
+    data: {
+      numero: `ORC${Math.random().toString().slice(2, 8)}`,
+      clienteId: cliente.id,
+      validadeDias: 15,
+      status: overrides.status ?? "APROVADO",
+    },
+  });
+}
+
+describe("ordemServicoService", () => {
+  it("converts an APROVADO orcamento into an OS", async () => {
+    const orcamento = await seedOrcamentoAprovado();
+    const os = await converterEmOS(orcamento.id);
+
+    expect(os.numero).toBe("OS0001");
+    expect(os.estagio).toBe("ARQUIVO_RECEBIDO");
+    expect(os.orcamento.id).toBe(orcamento.id);
+  });
+
+  it("rejects converting a non-APROVADO orcamento", async () => {
+    const orcamento = await seedOrcamentoAprovado({ status: "RASCUNHO" });
+    await expect(converterEmOS(orcamento.id)).rejects.toThrow(
+      "Só é possível converter um orçamento aprovado em OS"
+    );
+  });
+
+  it("rejects converting the same orcamento twice", async () => {
+    const orcamento = await seedOrcamentoAprovado();
+    await converterEmOS(orcamento.id);
+    await expect(converterEmOS(orcamento.id)).rejects.toThrow(
+      "Este orçamento já foi convertido em OS"
+    );
+  });
+
+  it("lists and searches by cliente nome", async () => {
+    const orcamento = await seedOrcamentoAprovado();
+    await converterEmOS(orcamento.id);
+
+    const resultados = await listarOrdensServico("Cliente Teste");
+    expect(resultados).toHaveLength(1);
+    const vazio = await listarOrdensServico("Nome Que Não Existe");
+    expect(vazio).toHaveLength(0);
+  });
+
+  it("throws NotFoundError for a missing ordem de servico", async () => {
+    await expect(buscarOrdemServico("id-inexistente")).rejects.toThrow("Não encontrado");
+  });
+});
