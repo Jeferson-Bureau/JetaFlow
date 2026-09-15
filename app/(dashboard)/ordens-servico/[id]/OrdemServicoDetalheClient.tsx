@@ -2,14 +2,37 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import OrdemServicoEstagioBadge from "@/components/OrdemServicoEstagioBadge";
 import { ESTAGIOS_OS } from "@/lib/services/ordemServicoCalculo";
+import { calcularProgressoConferencia } from "@/lib/services/expedicaoCalculo";
+import ExpedicaoForm, { type ExpedicaoFormValues } from "@/components/forms/ExpedicaoForm";
 
 interface ItemResumo {
   id: string;
   descricao: string;
   tiragem: number;
   precoFinal: number;
+}
+
+interface VolumeResumo {
+  id: string;
+  numero: number;
+  codigoInterno: string;
+  conferido: boolean;
+}
+
+interface ExpedicaoResumo {
+  id: string;
+  totalVolumes: number;
+  cep: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  volumes: VolumeResumo[];
 }
 
 interface OrdemServicoDetalheClientProps {
@@ -22,6 +45,8 @@ interface OrdemServicoDetalheClientProps {
   clienteNome: string;
   itens: ItemResumo[];
   total: number;
+  clienteEndereco: Omit<ExpedicaoResumo, "id" | "totalVolumes" | "volumes">;
+  expedicao: ExpedicaoResumo | null;
 }
 
 export default function OrdemServicoDetalheClient({
@@ -34,12 +59,51 @@ export default function OrdemServicoDetalheClient({
   clienteNome,
   itens,
   total,
+  clienteEndereco,
+  expedicao,
 }: OrdemServicoDetalheClientProps) {
   const router = useRouter();
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [prazoEntrega, setPrazoEntrega] = useState(prazoEntregaInicial);
   const [observacoes, setObservacoes] = useState(observacoesInicial);
+
+  const [mostrarFormExpedicao, setMostrarFormExpedicao] = useState(false);
+  const [erroExpedicao, setErroExpedicao] = useState("");
+  const [carregandoExpedicao, setCarregandoExpedicao] = useState(false);
+  const [expedicaoForm, setExpedicaoForm] = useState<ExpedicaoFormValues>(
+    expedicao
+      ? {
+          totalVolumes: expedicao.totalVolumes,
+          cep: expedicao.cep,
+          endereco: expedicao.endereco,
+          numero: expedicao.numero,
+          complemento: expedicao.complemento,
+          bairro: expedicao.bairro,
+          cidade: expedicao.cidade,
+          uf: expedicao.uf,
+        }
+      : { totalVolumes: 1, ...clienteEndereco }
+  );
+  const progresso = calcularProgressoConferencia(expedicao?.volumes ?? []);
+
+  async function gerarEtiquetas() {
+    setErroExpedicao("");
+    setCarregandoExpedicao(true);
+    const response = await fetch(`/api/ordens-servico/${id}/expedicao`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(expedicaoForm),
+    });
+    setCarregandoExpedicao(false);
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setErroExpedicao(data.details?.[0]?.message ?? data.error ?? "Erro ao gerar etiquetas");
+      return;
+    }
+    setMostrarFormExpedicao(false);
+    router.refresh();
+  }
 
   async function avancarOuVoltar(acao: "avancar" | "voltar") {
     setErro("");
@@ -129,6 +193,70 @@ export default function OrdemServicoDetalheClient({
           ))}
         </tbody>
       </table>
+
+      <div className="mb-6 rounded-lg border p-4">
+        <h2 className="mb-3 text-lg font-semibold text-marinho">Expedição</h2>
+        {erroExpedicao && <p className="mb-3 text-sm text-rosa">{erroExpedicao}</p>}
+
+        {expedicao && !mostrarFormExpedicao && (
+          <div className="space-y-2 text-sm">
+            <p>
+              {progresso.conferidos} de {progresso.total} volumes conferidos
+            </p>
+            <div className="flex gap-3">
+              <a
+                href={`/api/expedicao/${expedicao.id}/pdf`}
+                className="text-ciano"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Baixar etiquetas (PDF)
+              </a>
+              <Link href={`/expedicao/${expedicao.id}/conferencia`} className="text-ciano">
+                Conferência
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMostrarFormExpedicao(true)}
+                className="text-gray-500 underline"
+              >
+                Regenerar etiquetas
+              </button>
+            </div>
+          </div>
+        )}
+
+        {(!expedicao || mostrarFormExpedicao) && (
+          <div className="space-y-3">
+            {expedicao && (
+              <p className="text-sm text-rosa">
+                Regenerar vai apagar as {expedicao.totalVolumes} etiquetas atuais e zerar a
+                conferência.
+              </p>
+            )}
+            <ExpedicaoForm value={expedicaoForm} onChange={setExpedicaoForm} />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={carregandoExpedicao}
+                onClick={gerarEtiquetas}
+                className="rounded bg-ciano px-4 py-2 text-sm text-white"
+              >
+                {expedicao ? "Regenerar Etiquetas" : "Gerar Etiquetas"}
+              </button>
+              {expedicao && (
+                <button
+                  type="button"
+                  onClick={() => setMostrarFormExpedicao(false)}
+                  className="text-sm text-gray-500"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       <form onSubmit={salvarDetalhes} className="max-w-sm space-y-3">
         <label className="block text-sm">
