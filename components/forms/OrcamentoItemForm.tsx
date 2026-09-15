@@ -2,6 +2,7 @@
 
 import Combobox from "@/components/ui/Combobox";
 import { calcularItem, type ItemCalculoInput } from "@/lib/services/orcamentoCalculo";
+import { sugerirAproveitamento } from "@/lib/services/aproveitamentoPapel";
 
 export interface OrcamentoItemValues {
   descricao: string;
@@ -92,6 +93,10 @@ export default function OrcamentoItemForm({
   parametros,
 }: OrcamentoItemFormProps) {
   const preview = calcularPreview(value, substratos, equipamentos, parametros);
+  const sugestoesAproveitamento =
+    value.tipo === "OFFSET" && value.larguraCm > 0 && value.alturaCm > 0 && value.tiragem > 0
+      ? sugerirAproveitamento(value.larguraCm, value.alturaCm, value.tiragem)
+      : [];
 
   function set<K extends keyof OrcamentoItemValues>(key: K, val: OrcamentoItemValues[K]) {
     onChange({ ...value, [key]: val });
@@ -207,6 +212,21 @@ export default function OrcamentoItemForm({
               className="w-full rounded border px-3 py-2"
             />
           </div>
+        </div>
+      )}
+
+      {value.tipo === "OFFSET" && sugestoesAproveitamento.length > 0 && (
+        <div className="rounded border border-dashed border-ciano p-3 text-sm">
+          <p className="mb-1 font-medium text-marinho">Melhor aproveitamento de papel</p>
+          <ul className="space-y-1 text-gray-600">
+            {sugestoesAproveitamento.slice(0, 3).map((sugestao, i) => (
+              <li key={i}>
+                Folha {sugestao.formatoPai.larguraCm}×{sugestao.formatoPai.alturaCm} cm → corte{" "}
+                {sugestao.corte.larguraCm}×{sugestao.corte.alturaCm} cm → {sugestao.corte.pecas}{" "}
+                peças/folha → ~{sugestao.folhasNecessarias} folhas para a tiragem
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
