@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { prisma } from "@/lib/prisma";
-import { gerarExpedicao, buscarExpedicaoPorOS, buscarExpedicao } from "@/lib/services/expedicaoService";
+import { gerarExpedicao, buscarExpedicaoPorOS, buscarExpedicao, conferirVolume } from "@/lib/services/expedicaoService";
 
 async function seedOS() {
   const cliente = await prisma.cliente.create({
@@ -90,5 +90,61 @@ describe("expedicaoService", () => {
 
     const encontrada = await buscarExpedicao(criada.id);
     expect(encontrada.id).toBe(criada.id);
+  });
+
+  describe("conferirVolume", () => {
+    it("marks the matching volume as conferido", async () => {
+      const os = await seedOS();
+      const expedicao = await gerarExpedicao(os.id, { totalVolumes: 2 });
+      const codigo = expedicao.volumes[0].codigoInterno;
+
+      const atualizada = await conferirVolume(expedicao.id, codigo);
+      const volumeAtualizado = atualizada.volumes.find((v) => v.codigoInterno === codigo);
+
+      expect(volumeAtualizado?.conferido).toBe(true);
+      expect(volumeAtualizado?.conferidoEm).not.toBeNull();
+    });
+
+    it("rejects an unknown codigoInterno", async () => {
+      const os = await seedOS();
+      const expedicao = await gerarExpedicao(os.id, { totalVolumes: 1 });
+
+      await expect(conferirVolume(expedicao.id, "CODIGO-INEXISTENTE")).rejects.toThrow(
+        "Código não encontrado nesta expedição"
+      );
+    });
+
+    it("rejects a codigoInterno that belongs to a different expedicao", async () => {
+      const os1 = await seedOS();
+      const expedicao1 = await gerarExpedicao(os1.id, { totalVolumes: 1 });
+
+      const cliente2 = await prisma.cliente.create({
+        data: { tipo: "PJ", nome: "Cliente 2", documento: "00000000000272" },
+      });
+      const orcamento2 = await prisma.orcamento.create({
+        data: { numero: "ORC0002", clienteId: cliente2.id, validadeDias: 15, status: "APROVADO" },
+      });
+      const os2 = await prisma.ordemServico.create({
+        data: { numero: "OS0002", orcamentoId: orcamento2.id },
+      });
+      const expedicao2 = await gerarExpedicao(os2.id, { totalVolumes: 1 });
+
+      const codigoDaExpedicao1 = expedicao1.volumes[0].codigoInterno;
+
+      await expect(conferirVolume(expedicao2.id, codigoDaExpedicao1)).rejects.toThrow(
+        "Código não encontrado nesta expedição"
+      );
+    });
+
+    it("rejects re-scanning an already-conferred volume", async () => {
+      const os = await seedOS();
+      const expedicao = await gerarExpedicao(os.id, { totalVolumes: 1 });
+      const codigo = expedicao.volumes[0].codigoInterno;
+
+      await conferirVolume(expedicao.id, codigo);
+      await expect(conferirVolume(expedicao.id, codigo)).rejects.toThrow(
+        "Este volume já foi conferido"
+      );
+    });
   });
 });

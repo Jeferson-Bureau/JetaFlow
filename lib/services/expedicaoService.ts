@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { buscarOrdemServico } from "@/lib/services/ordemServicoService";
 import { gerarCodigoInterno } from "@/lib/services/expedicaoCalculo";
-import { NotFoundError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import type { ExpedicaoInput } from "@/lib/validators/expedicao";
 import type { Prisma } from "@prisma/client";
 
@@ -65,4 +65,24 @@ export async function buscarExpedicao(id: string): Promise<ExpedicaoComVolumes> 
   });
   if (!expedicao) throw new NotFoundError();
   return expedicao;
+}
+
+export async function conferirVolume(
+  expedicaoId: string,
+  codigoInterno: string
+): Promise<ExpedicaoComVolumes> {
+  const volume = await prisma.volume.findUnique({ where: { codigoInterno } });
+  if (!volume || volume.expedicaoId !== expedicaoId) {
+    throw new NotFoundError("Código não encontrado nesta expedição");
+  }
+  if (volume.conferido) {
+    throw new ForbiddenError("Este volume já foi conferido");
+  }
+
+  await prisma.volume.update({
+    where: { id: volume.id },
+    data: { conferido: true, conferidoEm: new Date() },
+  });
+
+  return buscarExpedicao(expedicaoId);
 }
