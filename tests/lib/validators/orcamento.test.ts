@@ -39,6 +39,56 @@ describe("orcamentoItemInputSchema", () => {
     const result = orcamentoItemInputSchema.safeParse({ ...validItem, tiragem: 0 });
     expect(result.success).toBe(false);
   });
+
+  it("rejects an OFFSET item with chapaId set but chapaQuantidade null", () => {
+    const result = orcamentoItemInputSchema.safeParse({
+      ...validItem,
+      tipo: "OFFSET",
+      chapaId: "chapa1",
+      chapaQuantidade: null,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an OFFSET item with chapaQuantidade set but chapaId null", () => {
+    const result = orcamentoItemInputSchema.safeParse({
+      ...validItem,
+      tipo: "OFFSET",
+      chapaId: null,
+      chapaQuantidade: 4,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an OFFSET item with tintaId set but tintaQuantidade null", () => {
+    const result = orcamentoItemInputSchema.safeParse({
+      ...validItem,
+      tipo: "OFFSET",
+      tintaId: "tinta1",
+      tintaQuantidade: null,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an OFFSET item with tintaQuantidade set but tintaId null", () => {
+    const result = orcamentoItemInputSchema.safeParse({
+      ...validItem,
+      tipo: "OFFSET",
+      tintaId: null,
+      tintaQuantidade: 2,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a DIGITAL item with a non-null chapaQuantidade even without chapaId", () => {
+    const result = orcamentoItemInputSchema.safeParse({
+      ...validItem,
+      tipo: "DIGITAL",
+      chapaId: null,
+      chapaQuantidade: 4,
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("orcamentoInputSchema", () => {

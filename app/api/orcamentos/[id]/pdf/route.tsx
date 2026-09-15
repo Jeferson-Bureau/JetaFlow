@@ -12,11 +12,12 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
   try {
     const orcamento = await buscarOrcamento(params.id);
     const buffer = await renderToBuffer(<OrcamentoPdfDocument orcamento={orcamento} />);
+    const numeroSanitizado = orcamento.numero.replace(/[^A-Za-z0-9_-]/g, "");
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${orcamento.numero}.pdf"`,
+        "Content-Disposition": `attachment; filename="${numeroSanitizado}.pdf"`,
       },
     });
   } catch (error) {

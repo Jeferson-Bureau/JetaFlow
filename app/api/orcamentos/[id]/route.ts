@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionRole } from "@/lib/permissions";
 import { handleApiError } from "@/lib/api-helpers";
 import { orcamentoInputSchema } from "@/lib/validators/orcamento";
-import { buscarOrcamento, atualizarOrcamento } from "@/lib/services/orcamentoService";
-import { prisma } from "@/lib/prisma";
+import { buscarOrcamento, atualizarOrcamento, excluirOrcamento } from "@/lib/services/orcamentoService";
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const role = await getSessionRole();
@@ -35,7 +34,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
   if (!role) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   try {
-    await prisma.orcamento.delete({ where: { id: params.id } });
+    await excluirOrcamento(params.id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return handleApiError(error);

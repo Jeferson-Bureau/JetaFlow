@@ -75,8 +75,8 @@ export default function OrcamentoForm({ initial }: { initial?: OrcamentoFormInit
   useEffect(() => {
     Promise.all([
       fetch("/api/clientes").then((r) => (r.ok ? r.json() : Promise.reject())),
-      fetch("/api/substratos").then((r) => (r.ok ? r.json() : Promise.reject())),
-      fetch("/api/equipamentos").then((r) => (r.ok ? r.json() : Promise.reject())),
+      fetch("/api/catalogo-precificacao/substratos").then((r) => (r.ok ? r.json() : Promise.reject())),
+      fetch("/api/catalogo-precificacao/equipamentos").then((r) => (r.ok ? r.json() : Promise.reject())),
       fetch("/api/parametros-calculo").then((r) => (r.ok ? r.json() : Promise.reject())),
     ])
       .then(([clientesData, substratosData, equipamentosData, parametrosData]) => {
@@ -127,7 +127,7 @@ export default function OrcamentoForm({ initial }: { initial?: OrcamentoFormInit
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      setErro(data.error ?? "Erro ao salvar orçamento");
+      setErro(data.details?.[0]?.message ?? data.error ?? "Erro ao salvar orçamento");
       return;
     }
 

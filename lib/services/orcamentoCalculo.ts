@@ -87,3 +87,14 @@ export function calcularItem(input: ItemCalculoInput): ItemCalculoResultado {
 
   return { custoCalculado, precoFinal };
 }
+
+export function calcularEstaExpirado(
+  status: string,
+  createdAt: Date | string,
+  validadeDias: number
+): boolean {
+  if (status === "APROVADO") return false;
+  const limite = new Date(createdAt);
+  limite.setDate(limite.getDate() + validadeDias);
+  return limite < new Date();
+}

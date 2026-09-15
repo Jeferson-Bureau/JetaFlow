@@ -17,9 +17,22 @@ export const orcamentoItemInputSchema = z
     acabamentoCusto: z.number().min(0).default(0),
     margemLucro: z.number().min(0),
   })
-  .refine((item) => item.tipo === "OFFSET" || (!item.chapaId && !item.tintaId), {
-    message: "Chapa e tinta só podem ser usadas em itens OFFSET",
-    path: ["chapaId"],
+  .refine(
+    (item) =>
+      item.tipo === "OFFSET" ||
+      (!item.chapaId && !item.chapaQuantidade && !item.tintaId && !item.tintaQuantidade),
+    {
+      message: "Chapa e tinta só podem ser usadas em itens OFFSET",
+      path: ["chapaId"],
+    }
+  )
+  .refine((item) => Boolean(item.chapaId) === Boolean(item.chapaQuantidade), {
+    message: "Informe a quantidade de chapas junto com a chapa selecionada",
+    path: ["chapaQuantidade"],
+  })
+  .refine((item) => Boolean(item.tintaId) === Boolean(item.tintaQuantidade), {
+    message: "Informe a quantidade de tinta junto com a tinta selecionada",
+    path: ["tintaQuantidade"],
   });
 
 export const orcamentoInputSchema = z.object({

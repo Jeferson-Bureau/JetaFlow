@@ -9,6 +9,7 @@ import {
   aprovarOrcamento,
   duplicarOrcamento,
   estaExpirado,
+  excluirOrcamento,
 } from "@/lib/services/orcamentoService";
 import { ForbiddenError } from "@/lib/errors";
 
@@ -169,6 +170,29 @@ describe("orcamentoService", () => {
     expect(copia.itens).toHaveLength(1);
     expect(copia.itens[0].descricao).toBe("Item original");
     expect(copia.itens[0].id).not.toBe(original.itens[0].id);
+  });
+
+  it("rejects deleting an APROVADO orcamento", async () => {
+    const criado = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+    });
+    await enviarOrcamento(criado.id);
+    await aprovarOrcamento(criado.id);
+
+    await expect(excluirOrcamento(criado.id)).rejects.toThrow(ForbiddenError);
+    await expect(buscarOrcamento(criado.id)).resolves.toBeTruthy();
+  });
+
+  it("deletes a RASCUNHO orcamento", async () => {
+    const criado = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+    });
+
+    await excluirOrcamento(criado.id);
+
+    await expect(buscarOrcamento(criado.id)).rejects.toThrow("Não encontrado");
   });
 
   it("estaExpirado is false for an APROVADO orcamento even past validadeDias", async () => {

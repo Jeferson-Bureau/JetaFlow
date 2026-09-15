@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { calcularEstaExpirado } from "@/lib/services/orcamentoCalculo";
 
 interface OrcamentoListado {
   id: string;
@@ -11,13 +12,6 @@ interface OrcamentoListado {
   validadeDias: number;
   cliente: { nome: string };
   itens: { precoFinal: number }[];
-}
-
-function estaExpirado(o: OrcamentoListado): boolean {
-  if (o.status === "APROVADO") return false;
-  const limite = new Date(o.createdAt);
-  limite.setDate(limite.getDate() + o.validadeDias);
-  return limite < new Date();
 }
 
 export default function OrcamentosPage() {
@@ -72,7 +66,7 @@ export default function OrcamentosPage() {
                 </a>
               </td>
               <td>{o.cliente.nome}</td>
-              <td>{estaExpirado(o) ? "Expirado" : o.status}</td>
+              <td>{calcularEstaExpirado(o.status, o.createdAt, o.validadeDias) ? "Expirado" : o.status}</td>
               <td>R$ {o.itens.reduce((soma, item) => soma + item.precoFinal, 0).toFixed(2)}</td>
             </tr>
           ))}

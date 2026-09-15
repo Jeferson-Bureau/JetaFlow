@@ -12,11 +12,16 @@ export default async function OrcamentoDetalhePage({ params }: { params: { id: s
     throw error;
   }
 
+  const total = orcamento.itens.reduce((soma, item) => soma + item.precoFinal, 0);
+
   return (
     <OrcamentoDetalheClient
       id={orcamento.id}
       numero={orcamento.numero}
       status={orcamento.status}
+      createdAt={orcamento.createdAt.toISOString()}
+      validadeDias={orcamento.validadeDias}
+      total={total}
       clienteTelefone={orcamento.cliente.telefone}
       clienteNome={orcamento.cliente.nome}
       initial={{

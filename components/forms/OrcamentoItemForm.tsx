@@ -187,7 +187,7 @@ export default function OrcamentoItemForm({
               type="number"
               placeholder="Qtd. chapas (cores)"
               value={value.chapaQuantidade ?? ""}
-              onChange={(e) => set("chapaQuantidade", Number(e.target.value))}
+              onChange={(e) => set("chapaQuantidade", e.target.value === "" ? null : Number(e.target.value))}
               className="w-full rounded border px-3 py-2"
             />
           </div>
@@ -203,7 +203,7 @@ export default function OrcamentoItemForm({
               type="number"
               placeholder="Qtd. tinta"
               value={value.tintaQuantidade ?? ""}
-              onChange={(e) => set("tintaQuantidade", Number(e.target.value))}
+              onChange={(e) => set("tintaQuantidade", e.target.value === "" ? null : Number(e.target.value))}
               className="w-full rounded border px-3 py-2"
             />
           </div>

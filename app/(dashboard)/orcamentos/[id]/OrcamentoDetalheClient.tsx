@@ -3,11 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import OrcamentoForm, { type OrcamentoFormInitial } from "@/components/forms/OrcamentoForm";
+import { calcularEstaExpirado } from "@/lib/services/orcamentoCalculo";
 
 interface OrcamentoDetalheClientProps {
   id: string;
   numero: string;
   status: string;
+  createdAt: string;
+  validadeDias: number;
+  total: number;
   clienteNome: string;
   clienteTelefone: string | null;
   initial: OrcamentoFormInitial;
@@ -17,6 +21,9 @@ export default function OrcamentoDetalheClient({
   id,
   numero,
   status,
+  createdAt,
+  validadeDias,
+  total,
   clienteNome,
   clienteTelefone,
   initial,
@@ -24,6 +31,7 @@ export default function OrcamentoDetalheClient({
   const router = useRouter();
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const expirado = calcularEstaExpirado(status, createdAt, validadeDias);
 
   async function chamarAcao(acao: "enviar" | "aprovar" | "duplicar") {
     setErro("");
@@ -59,7 +67,7 @@ export default function OrcamentoDetalheClient({
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-marinho">
-          Orçamento {numero} — {status}
+          Orçamento {numero} — {expirado ? "Expirado" : status}
         </h1>
         <div className="flex gap-2">
           <a
@@ -78,7 +86,7 @@ export default function OrcamentoDetalheClient({
               Enviar por WhatsApp
             </button>
           )}
-          {status === "ENVIADO" && (
+          {status === "ENVIADO" && !expirado && (
             <button
               type="button"
               disabled={carregando}
@@ -98,6 +106,10 @@ export default function OrcamentoDetalheClient({
           </button>
         </div>
       </div>
+
+      <p className="mb-4 text-sm text-gray-600">
+        Total: <span className="font-semibold text-marinho">R$ {total.toFixed(2)}</span>
+      </p>
 
       {erro && <p className="mb-4 text-sm text-rosa">{erro}</p>}
 

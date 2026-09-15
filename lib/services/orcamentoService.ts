@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { alocarProximoNumero } from "@/lib/services/numeracaoService";
-import { calcularItem, type ItemCalculoInput } from "@/lib/services/orcamentoCalculo";
+import { obterParametrosCalculo } from "@/lib/services/parametroCalculoService";
+import {
+  calcularItem,
+  calcularEstaExpirado,
+  type ItemCalculoInput,
+} from "@/lib/services/orcamentoCalculo";
 import type { OrcamentoInput } from "@/lib/validators/orcamento";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 const INCLUDE_ITENS_E_CLIENTE = {
   itens: true,
@@ -15,65 +20,68 @@ export type OrcamentoComItens = Prisma.OrcamentoGetPayload<{
 }>;
 
 async function carregarParametros() {
-  return prisma.parametroCalculo.upsert({
-    where: { id: 1 },
-    update: {},
-    create: { id: 1 },
-  });
+  return obterParametrosCalculo();
 }
 
 async function calcularItens(itens: OrcamentoInput["itens"]) {
   const parametros = await carregarParametros();
 
-  return Promise.all(
-    itens.map(async (item, ordem) => {
-      const substrato = await prisma.substrato.findUniqueOrThrow({ where: { id: item.substratoId } });
-      const equipamento = await prisma.equipamento.findUniqueOrThrow({ where: { id: item.equipamentoId } });
-      const chapa = item.chapaId
-        ? await prisma.substrato.findUniqueOrThrow({ where: { id: item.chapaId } })
-        : null;
-      const tinta = item.tintaId
-        ? await prisma.substrato.findUniqueOrThrow({ where: { id: item.tintaId } })
-        : null;
+  try {
+    return await Promise.all(
+      itens.map(async (item, ordem) => {
+        const substrato = await prisma.substrato.findUniqueOrThrow({ where: { id: item.substratoId } });
+        const equipamento = await prisma.equipamento.findUniqueOrThrow({ where: { id: item.equipamentoId } });
+        const chapa = item.chapaId
+          ? await prisma.substrato.findUniqueOrThrow({ where: { id: item.chapaId } })
+          : null;
+        const tinta = item.tintaId
+          ? await prisma.substrato.findUniqueOrThrow({ where: { id: item.tintaId } })
+          : null;
 
-      const calculoInput: ItemCalculoInput = {
-        tipo: item.tipo,
-        substrato,
-        larguraCm: item.larguraCm,
-        alturaCm: item.alturaCm,
-        tiragem: item.tiragem,
-        equipamento,
-        chapa,
-        chapaQuantidade: item.chapaQuantidade ?? null,
-        tinta,
-        tintaQuantidade: item.tintaQuantidade ?? null,
-        acabamentoCusto: item.acabamentoCusto,
-        margemLucro: item.margemLucro,
-        parametros,
-      };
-      const { custoCalculado, precoFinal } = calcularItem(calculoInput);
+        const calculoInput: ItemCalculoInput = {
+          tipo: item.tipo,
+          substrato,
+          larguraCm: item.larguraCm,
+          alturaCm: item.alturaCm,
+          tiragem: item.tiragem,
+          equipamento,
+          chapa,
+          chapaQuantidade: item.chapaQuantidade ?? null,
+          tinta,
+          tintaQuantidade: item.tintaQuantidade ?? null,
+          acabamentoCusto: item.acabamentoCusto,
+          margemLucro: item.margemLucro,
+          parametros,
+        };
+        const { custoCalculado, precoFinal } = calcularItem(calculoInput);
 
-      return {
-        descricao: item.descricao,
-        tipo: item.tipo,
-        substratoId: item.substratoId,
-        larguraCm: item.larguraCm,
-        alturaCm: item.alturaCm,
-        tiragem: item.tiragem,
-        equipamentoId: item.equipamentoId,
-        chapaId: item.chapaId ?? null,
-        chapaQuantidade: item.chapaQuantidade ?? null,
-        tintaId: item.tintaId ?? null,
-        tintaQuantidade: item.tintaQuantidade ?? null,
-        acabamentoDescricao: item.acabamentoDescricao ?? null,
-        acabamentoCusto: item.acabamentoCusto,
-        margemLucro: item.margemLucro,
-        custoCalculado,
-        precoFinal,
-        ordem,
-      };
-    })
-  );
+        return {
+          descricao: item.descricao,
+          tipo: item.tipo,
+          substratoId: item.substratoId,
+          larguraCm: item.larguraCm,
+          alturaCm: item.alturaCm,
+          tiragem: item.tiragem,
+          equipamentoId: item.equipamentoId,
+          chapaId: item.chapaId ?? null,
+          chapaQuantidade: item.chapaQuantidade ?? null,
+          tintaId: item.tintaId ?? null,
+          tintaQuantidade: item.tintaQuantidade ?? null,
+          acabamentoDescricao: item.acabamentoDescricao ?? null,
+          acabamentoCusto: item.acabamentoCusto,
+          margemLucro: item.margemLucro,
+          custoCalculado,
+          precoFinal,
+          ordem,
+        };
+      })
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      throw new NotFoundError("Substrato, equipamento, chapa ou tinta informado não foi encontrado");
+    }
+    throw error;
+  }
 }
 
 export async function criarOrcamento(input: OrcamentoInput): Promise<OrcamentoComItens> {
@@ -139,10 +147,7 @@ export async function atualizarOrcamento(id: string, input: OrcamentoInput): Pro
 }
 
 export function estaExpirado(orcamento: OrcamentoComItens): boolean {
-  if (orcamento.status === "APROVADO") return false;
-  const limite = new Date(orcamento.createdAt);
-  limite.setDate(limite.getDate() + orcamento.validadeDias);
-  return limite < new Date();
+  return calcularEstaExpirado(orcamento.status, orcamento.createdAt, orcamento.validadeDias);
 }
 
 export async function enviarOrcamento(id: string): Promise<OrcamentoComItens> {
@@ -176,37 +181,44 @@ export async function duplicarOrcamento(id: string): Promise<OrcamentoComItens> 
   const original = await buscarOrcamento(id);
   const numero = await alocarProximoNumero("ORCAMENTO");
 
+  const itensParaRecalcular: OrcamentoInput["itens"] = original.itens
+    .slice()
+    .sort((a, b) => a.ordem - b.ordem)
+    .map((item) => ({
+      descricao: item.descricao,
+      tipo: item.tipo as "DIGITAL" | "OFFSET",
+      substratoId: item.substratoId,
+      larguraCm: item.larguraCm,
+      alturaCm: item.alturaCm,
+      tiragem: item.tiragem,
+      equipamentoId: item.equipamentoId,
+      chapaId: item.chapaId,
+      chapaQuantidade: item.chapaQuantidade,
+      tintaId: item.tintaId,
+      tintaQuantidade: item.tintaQuantidade,
+      acabamentoDescricao: item.acabamentoDescricao,
+      acabamentoCusto: item.acabamentoCusto,
+      margemLucro: item.margemLucro,
+    }));
+
+  const itensCalculados = await calcularItens(itensParaRecalcular);
+
   return prisma.orcamento.create({
     data: {
       numero,
       clienteId: original.clienteId,
       observacoes: original.observacoes,
       validadeDias: original.validadeDias,
-      itens: {
-        create: original.itens
-          .slice()
-          .sort((a, b) => a.ordem - b.ordem)
-          .map((item) => ({
-            descricao: item.descricao,
-            tipo: item.tipo,
-            substratoId: item.substratoId,
-            larguraCm: item.larguraCm,
-            alturaCm: item.alturaCm,
-            tiragem: item.tiragem,
-            equipamentoId: item.equipamentoId,
-            chapaId: item.chapaId,
-            chapaQuantidade: item.chapaQuantidade,
-            tintaId: item.tintaId,
-            tintaQuantidade: item.tintaQuantidade,
-            acabamentoDescricao: item.acabamentoDescricao,
-            acabamentoCusto: item.acabamentoCusto,
-            margemLucro: item.margemLucro,
-            custoCalculado: item.custoCalculado,
-            precoFinal: item.precoFinal,
-            ordem: item.ordem,
-          })),
-      },
+      itens: { create: itensCalculados },
     },
     include: INCLUDE_ITENS_E_CLIENTE,
   });
+}
+
+export async function excluirOrcamento(id: string): Promise<void> {
+  const existente = await buscarOrcamento(id);
+  if (existente.status === "APROVADO") {
+    throw new ForbiddenError("Orçamento aprovado não pode ser excluído");
+  }
+  await prisma.orcamento.delete({ where: { id } });
 }
