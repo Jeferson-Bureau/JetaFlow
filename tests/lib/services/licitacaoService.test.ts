@@ -69,6 +69,16 @@ describe("cadastrarLicitacao", () => {
     );
   });
 
+  it("propagates a ServiceUnavailableError from the PNCP client instead of reporting not-found", async () => {
+    const { ServiceUnavailableError } = await import("@/lib/errors");
+    vi.mocked(pncp.buscarContratacaoPNCP).mockRejectedValue(
+      new ServiceUnavailableError("Não foi possível consultar o PNCP no momento.")
+    );
+    await expect(cadastrarLicitacao("01612441000107-1-000131/2026")).rejects.toThrow(
+      "Não foi possível consultar o PNCP no momento."
+    );
+  });
+
   it("normalizes whitespace so a padded numeroControlePNCP is treated as a duplicate", async () => {
     vi.mocked(pncp.buscarContratacaoPNCP).mockResolvedValue(DADOS_PNCP_MOCK);
     await cadastrarLicitacao("01612441000107-1-000131/2026");

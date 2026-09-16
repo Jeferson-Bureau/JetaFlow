@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { Prisma } from "@prisma/client";
-import { ForbiddenError, NotFoundError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError, ServiceUnavailableError } from "@/lib/errors";
 
 export function handleApiError(error: unknown) {
   if (error instanceof ForbiddenError) {
@@ -9,6 +9,9 @@ export function handleApiError(error: unknown) {
   }
   if (error instanceof NotFoundError) {
     return NextResponse.json({ error: error.message }, { status: 404 });
+  }
+  if (error instanceof ServiceUnavailableError) {
+    return NextResponse.json({ error: error.message }, { status: 503 });
   }
   if (error instanceof ZodError) {
     return NextResponse.json({ error: "Dados inválidos", details: error.issues }, { status: 400 });

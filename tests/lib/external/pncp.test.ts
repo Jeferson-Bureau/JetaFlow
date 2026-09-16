@@ -48,16 +48,24 @@ describe("buscarContratacaoPNCP", () => {
     expect(result?.valorTotalHomologado).toBeNull();
   });
 
-  it("returns null when the API responds with a non-ok status", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+  it("returns null when the API responds with 404 (genuinely not found)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
     const result = await buscarContratacaoPNCP("00000000000000", 2026, 1);
     expect(result).toBeNull();
   });
 
-  it("returns null when fetch itself rejects", async () => {
+  it("throws ServiceUnavailableError when the API responds with a 5xx status", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    await expect(buscarContratacaoPNCP("01612441000107", 2026, 131)).rejects.toThrow(
+      "Não foi possível consultar o PNCP no momento"
+    );
+  });
+
+  it("throws ServiceUnavailableError when fetch itself rejects (network error/timeout)", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
-    const result = await buscarContratacaoPNCP("01612441000107", 2026, 131);
-    expect(result).toBeNull();
+    await expect(buscarContratacaoPNCP("01612441000107", 2026, 131)).rejects.toThrow(
+      "Não foi possível consultar o PNCP no momento"
+    );
   });
 
   it("sends a User-Agent header", async () => {
