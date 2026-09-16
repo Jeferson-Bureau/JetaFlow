@@ -8,9 +8,13 @@ export async function GET(request: NextRequest) {
   const role = await getSessionRole();
   if (!role) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const search = request.nextUrl.searchParams.get("search") ?? undefined;
-  const licitacoes = await listarLicitacoes(search);
-  return NextResponse.json(licitacoes);
+  try {
+    const search = request.nextUrl.searchParams.get("search") ?? undefined;
+    const licitacoes = await listarLicitacoes(search);
+    return NextResponse.json(licitacoes);
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function POST(request: NextRequest) {
