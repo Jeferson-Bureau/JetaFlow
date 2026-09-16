@@ -24,6 +24,9 @@ export const parametrosSchema = z.object({
   margemLucroPadrao: z.number().min(0),
   custoMaoObraHoraPadrao: z.number().min(0),
   percentualCustosIndiretosPadrao: z.number().min(0),
+  impostosPercentualPadrao: z.number().min(0),
+  comissaoPercentualPadrao: z.number().min(0),
+  despesasFinanceirasPercentualPadrao: z.number().min(0),
 });
 
 export type ParametrosInput = z.infer<typeof parametrosSchema>;

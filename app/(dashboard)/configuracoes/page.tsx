@@ -8,7 +8,14 @@ interface Empresa {
   telefone: string; whatsappNumero: string; temaPadrao: string; logoUrl: string | null;
 }
 interface Numeracao { tipoDocumento: string; prefixo: string; proximoNumero: number; digitos: number; }
-interface Parametros { margemLucroPadrao: number; custoMaoObraHoraPadrao: number; percentualCustosIndiretosPadrao: number; }
+interface Parametros {
+  margemLucroPadrao: number;
+  custoMaoObraHoraPadrao: number;
+  percentualCustosIndiretosPadrao: number;
+  impostosPercentualPadrao: number;
+  comissaoPercentualPadrao: number;
+  despesasFinanceirasPercentualPadrao: number;
+}
 
 type Tab = "empresa" | "numeracao" | "parametros";
 
@@ -137,6 +144,10 @@ export default function ConfiguracoesPage() {
           <input type="number" placeholder="Margem de lucro padrão (%)" value={parametros.margemLucroPadrao} onChange={(e) => setParametros({ ...parametros, margemLucroPadrao: Number(e.target.value) })} className="w-full rounded border px-3 py-2" />
           <input type="number" placeholder="Custo de mão de obra/hora padrão" value={parametros.custoMaoObraHoraPadrao} onChange={(e) => setParametros({ ...parametros, custoMaoObraHoraPadrao: Number(e.target.value) })} className="w-full rounded border px-3 py-2" />
           <input type="number" placeholder="Custos indiretos padrão (%)" value={parametros.percentualCustosIndiretosPadrao} onChange={(e) => setParametros({ ...parametros, percentualCustosIndiretosPadrao: Number(e.target.value) })} className="w-full rounded border px-3 py-2" />
+          <p className="pt-2 text-sm font-medium text-marinho">Markup divisor (impostos, comissão, despesas financeiras)</p>
+          <input type="number" placeholder="Impostos (%)" value={parametros.impostosPercentualPadrao} onChange={(e) => setParametros({ ...parametros, impostosPercentualPadrao: Number(e.target.value) })} className="w-full rounded border px-3 py-2" />
+          <input type="number" placeholder="Comissão (%)" value={parametros.comissaoPercentualPadrao} onChange={(e) => setParametros({ ...parametros, comissaoPercentualPadrao: Number(e.target.value) })} className="w-full rounded border px-3 py-2" />
+          <input type="number" placeholder="Despesas financeiras (%)" value={parametros.despesasFinanceirasPercentualPadrao} onChange={(e) => setParametros({ ...parametros, despesasFinanceirasPercentualPadrao: Number(e.target.value) })} className="w-full rounded border px-3 py-2" />
           <button type="submit" className="rounded bg-ciano px-4 py-2 text-white">Salvar</button>
         </form>
       )}

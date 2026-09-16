@@ -3,8 +3,9 @@ import { beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 
 const TABLES = [
-  "Licitacao", "EtiquetaAvulsa", "Volume", "Expedicao", "OrdemServico", "OrcamentoItem", "Orcamento",
-  "Cliente", "Fornecedor", "Substrato", "Equipamento",
+  "Licitacao", "EtiquetaAvulsa", "Volume", "Expedicao", "OrdemServico",
+  "OrcamentoItemAcabamento", "OrcamentoItem", "Orcamento",
+  "Cliente", "Fornecedor", "Substrato", "Equipamento", "Acabamento",
   "User", "ConfiguracaoGeral", "NumeracaoDocumento", "ParametroCalculo",
 ];
 

@@ -35,7 +35,6 @@ describe("Orcamento schema", () => {
               alturaCm: 50,
               tiragem: 100,
               equipamentoId: equipamento.id,
-              acabamentoCusto: 20,
               margemLucro: 25,
               custoCalculado: 1001,
               precoFinal: 1251.25,

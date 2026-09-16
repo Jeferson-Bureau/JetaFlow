@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sugerirAproveitamento } from "@/lib/services/aproveitamentoPapel";
+import { sugerirAproveitamento, sugerirAproveitamentoDigital } from "@/lib/services/aproveitamentoPapel";
 
 describe("sugerirAproveitamento", () => {
   it("finds an exact match from the table and computes folhas needed", () => {
@@ -37,5 +37,32 @@ describe("sugerirAproveitamento", () => {
     const resultados = sugerirAproveitamento(11, 16, 33);
     const doisFolhasComTiragem33 = resultados.find((r) => r.corte.pecas === 32);
     expect(doisFolhasComTiragem33?.folhasNecessarias).toBe(2);
+  });
+});
+
+describe("sugerirAproveitamentoDigital", () => {
+  it("picks the best fit among A4, A3 and SRA3 (grade simples, com rotação)", () => {
+    const resultados = sugerirAproveitamentoDigital(9, 5, 1000);
+    expect(resultados[0].formatoPai).toEqual({ larguraCm: 32, alturaCm: 45 });
+    expect(resultados[0].corte.pecas).toBe(30);
+    expect(resultados[0].folhasNecessarias).toBe(34);
+  });
+
+  it("returns candidates sorted by best yield (most pecas) first", () => {
+    const resultados = sugerirAproveitamentoDigital(9, 5, 1000);
+    for (let i = 1; i < resultados.length; i++) {
+      expect(resultados[i - 1].corte.pecas).toBeGreaterThanOrEqual(resultados[i].corte.pecas);
+    }
+  });
+
+  it("returns an empty array when the piece doesn't fit any digital format", () => {
+    const resultados = sugerirAproveitamentoDigital(50, 50, 10);
+    expect(resultados).toEqual([]);
+  });
+
+  it("returns an empty array for invalid dimensions or tiragem", () => {
+    expect(sugerirAproveitamentoDigital(0, 5, 100)).toEqual([]);
+    expect(sugerirAproveitamentoDigital(9, 0, 100)).toEqual([]);
+    expect(sugerirAproveitamentoDigital(9, 5, 0)).toEqual([]);
   });
 });

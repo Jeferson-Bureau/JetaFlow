@@ -19,10 +19,10 @@ model User {
 }
 
 model Cliente {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   tipo           String
   nome           String
-  documento      String   @unique
+  documento      String      @unique
   ie             String?
   telefone       String?
   email          String?
@@ -35,8 +35,8 @@ model Cliente {
   uf             String?
   prazoPagamento Int?
   observacoes    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
   orcamentos     Orcamento[]
 }
 
@@ -61,26 +61,40 @@ model Fornecedor {
 }
 
 model Substrato {
-  id                      String        @id @default(cuid())
+  id                      String          @id @default(cuid())
   nome                    String
   tipo                    String
   fornecedorId            String?
-  fornecedor              Fornecedor?   @relation(fields: [fornecedorId], references: [id])
+  fornecedor              Fornecedor?     @relation(fields: [fornecedorId], references: [id])
   unidadeMedida           String
   custoUnitario           Float
-  percentualPerda         Float         @default(0)
-  markup                  Float         @default(0)
+  percentualPerda         Float           @default(0)
+  markup                  Float           @default(0)
   atributos               String
-  ativo                   Boolean       @default(true)
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
+  ativo                   Boolean         @default(true)
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
   orcamentoItensPrincipal OrcamentoItem[] @relation("OrcamentoItemSubstratoPrincipal")
   orcamentoItensChapa     OrcamentoItem[] @relation("OrcamentoItemChapa")
   orcamentoItensTinta     OrcamentoItem[] @relation("OrcamentoItemTinta")
 }
 
+model Acabamento {
+  id              String                    @id @default(cuid())
+  nome            String
+  categoria       String
+  tipoCalculo     String
+  valorFixo       Float?
+  valorPorUnidade Float?
+  percentualPerda Float                     @default(0)
+  ativo           Boolean                   @default(true)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  itens           OrcamentoItemAcabamento[]
+}
+
 model Equipamento {
-  id                    String   @id @default(cuid())
+  id                    String          @id @default(cuid())
   nome                  String
   tipo                  String
   velocidade            Float
@@ -88,11 +102,11 @@ model Equipamento {
   formatoMaximo         String
   custoHora             Float
   tempoSetupMin         Int
-  percentualPerda       Float    @default(0)
+  percentualPerda       Float           @default(0)
   acabamentosSuportados String
-  ativo                 Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  ativo                 Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
   orcamentoItens        OrcamentoItem[]
 }
 
@@ -118,12 +132,15 @@ model NumeracaoDocumento {
 }
 
 model ParametroCalculo {
-  id                              Int      @id @default(1)
-  margemLucroPadrao               Float    @default(0)
-  custoMaoObraHoraPadrao          Float    @default(0)
-  percentualCustosIndiretosPadrao Float    @default(0)
-  updatedAt                       DateTime @updatedAt
-  validadePadraoDias              Int      @default(15)
+  id                                  Int      @id @default(1)
+  margemLucroPadrao                   Float    @default(0)
+  custoMaoObraHoraPadrao              Float    @default(0)
+  percentualCustosIndiretosPadrao     Float    @default(0)
+  impostosPercentualPadrao            Float    @default(0)
+  comissaoPercentualPadrao            Float    @default(0)
+  despesasFinanceirasPercentualPadrao Float    @default(0)
+  updatedAt                           DateTime @updatedAt
+  validadePadraoDias                  Int      @default(15)
 }
 
 model Orcamento {
@@ -143,44 +160,58 @@ model Orcamento {
 }
 
 model OrcamentoItem {
-  id                  String      @id @default(cuid())
-  orcamentoId         String
-  orcamento           Orcamento   @relation(fields: [orcamentoId], references: [id], onDelete: Cascade)
-  descricao           String
-  tipo                String
-  substratoId         String
-  substrato           Substrato   @relation("OrcamentoItemSubstratoPrincipal", fields: [substratoId], references: [id], onDelete: Restrict)
-  larguraCm           Float
-  alturaCm            Float
-  tiragem             Int
-  equipamentoId       String
-  equipamento         Equipamento @relation(fields: [equipamentoId], references: [id], onDelete: Restrict)
-  chapaId             String?
-  chapa               Substrato?  @relation("OrcamentoItemChapa", fields: [chapaId], references: [id], onDelete: SetNull)
-  chapaQuantidade     Float?
-  tintaId             String?
-  tinta               Substrato?  @relation("OrcamentoItemTinta", fields: [tintaId], references: [id], onDelete: SetNull)
-  tintaQuantidade     Float?
-  substratoFolhas     Float?
-  acabamentoDescricao String?
-  acabamentoCusto     Float       @default(0)
-  margemLucro         Float
-  custoCalculado      Float
-  precoFinal          Float
-  ordem               Int
+  id              String                    @id @default(cuid())
+  orcamentoId     String
+  orcamento       Orcamento                 @relation(fields: [orcamentoId], references: [id], onDelete: Cascade)
+  descricao       String
+  tipo            String
+  substratoId     String
+  substrato       Substrato                 @relation("OrcamentoItemSubstratoPrincipal", fields: [substratoId], references: [id], onDelete: Restrict)
+  larguraCm       Float
+  alturaCm        Float
+  tiragem         Int
+  equipamentoId   String
+  equipamento     Equipamento               @relation(fields: [equipamentoId], references: [id], onDelete: Restrict)
+  chapaId         String?
+  chapa           Substrato?                @relation("OrcamentoItemChapa", fields: [chapaId], references: [id], onDelete: SetNull)
+  coresFrente     Int?
+  coresVerso      Int?
+  chapaQuantidade Int?
+  tintaId         String?
+  tinta           Substrato?                @relation("OrcamentoItemTinta", fields: [tintaId], references: [id], onDelete: SetNull)
+  tintaQuantidade Float?
+  substratoFolhas Float?
+  acabamentos     OrcamentoItemAcabamento[]
+  tipoMarkup      String                    @default("MULTIPLICADOR")
+  margemLucro     Float
+  custoCalculado  Float
+  precoFinal      Float
+  ordem           Int
+}
+
+model OrcamentoItemAcabamento {
+  id              String        @id @default(cuid())
+  orcamentoItemId String
+  orcamentoItem   OrcamentoItem @relation(fields: [orcamentoItemId], references: [id], onDelete: Cascade)
+  acabamentoId    String?
+  acabamento      Acabamento?   @relation(fields: [acabamentoId], references: [id], onDelete: SetNull)
+  descricaoAvulsa String?
+  quantidade      Float?
+  custoCalculado  Float
+  ordem           Int
 }
 
 model OrdemServico {
-  id           String    @id @default(cuid())
-  numero       String    @unique
-  orcamentoId  String    @unique
-  orcamento    Orcamento @relation(fields: [orcamentoId], references: [id], onDelete: Restrict)
-  estagio      String    @default("ARQUIVO_RECEBIDO")
-  estagioDesde DateTime  @default(now())
+  id           String     @id @default(cuid())
+  numero       String     @unique
+  orcamentoId  String     @unique
+  orcamento    Orcamento  @relation(fields: [orcamentoId], references: [id], onDelete: Restrict)
+  estagio      String     @default("ARQUIVO_RECEBIDO")
+  estagioDesde DateTime   @default(now())
   prazoEntrega DateTime?
   observacoes  String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   expedicao    Expedicao?
 }
 
@@ -218,11 +249,11 @@ model EtiquetaAvulsa {
 }
 
 model Licitacao {
-  id                       String    @id @default(cuid())
-  numeroControlePNCP       String    @unique
-  cnpjOrgao                String
-  anoCompra                Int
-  sequencialCompra         Int
+  id                 String @id @default(cuid())
+  numeroControlePNCP String @unique
+  cnpjOrgao          String
+  anoCompra          Int
+  sequencialCompra   Int
 
   orgaoNome                String
   unidadeNome              String
@@ -236,11 +267,11 @@ model Licitacao {
   dataEncerramentoProposta DateTime?
   dataAtualizacaoPNCP      DateTime
 
-  statusInterno            String    @default("ANALISANDO")
-  valorProposta            Float?
-  responsavel              String?
-  observacoes              String?
+  statusInterno String  @default("ANALISANDO")
+  valorProposta Float?
+  responsavel   String?
+  observacoes   String?
 
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

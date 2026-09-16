@@ -29,3 +29,19 @@ export async function listEquipamentosComCusto() {
     },
   });
 }
+
+export async function listAcabamentosComCusto() {
+  return prisma.acabamento.findMany({
+    where: { ativo: true },
+    orderBy: { nome: "asc" },
+    select: {
+      id: true,
+      nome: true,
+      categoria: true,
+      tipoCalculo: true,
+      valorFixo: true,
+      valorPorUnidade: true,
+      percentualPerda: true,
+    },
+  });
+}

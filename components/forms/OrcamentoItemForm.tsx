@@ -1,8 +1,20 @@
 "use client";
 
 import Combobox from "@/components/ui/Combobox";
-import { calcularItem, type ItemCalculoInput } from "@/lib/services/orcamentoCalculo";
-import { sugerirAproveitamento } from "@/lib/services/aproveitamentoPapel";
+import {
+  calcularItem,
+  calcularCustoAcabamento,
+  calcularQuantidadeChapas,
+  type ItemCalculoInput,
+} from "@/lib/services/orcamentoCalculo";
+import { sugerirAproveitamento, sugerirAproveitamentoDigital } from "@/lib/services/aproveitamentoPapel";
+
+export interface OrcamentoItemAcabamentoValues {
+  acabamentoId: string | null;
+  descricaoAvulsa: string;
+  quantidade: number | null;
+  valorAvulso: number;
+}
 
 export interface OrcamentoItemValues {
   descricao: string;
@@ -13,12 +25,13 @@ export interface OrcamentoItemValues {
   tiragem: number;
   equipamentoId: string;
   chapaId: string | null;
-  chapaQuantidade: number | null;
+  coresFrente: number | null;
+  coresVerso: number | null;
   tintaId: string | null;
   tintaQuantidade: number | null;
   substratoFolhas: number | null;
-  acabamentoDescricao: string;
-  acabamentoCusto: number;
+  acabamentos: OrcamentoItemAcabamentoValues[];
+  tipoMarkup: "MULTIPLICADOR" | "DIVISOR";
   margemLucro: number;
 }
 
@@ -40,19 +53,57 @@ interface EquipamentoOpcao {
   percentualPerda: number;
 }
 
+export interface AcabamentoOpcao {
+  id: string;
+  nome: string;
+  tipoCalculo: "FIXO" | "POR_UNIDADE";
+  valorFixo: number | null;
+  valorPorUnidade: number | null;
+  percentualPerda: number;
+}
+
 interface OrcamentoItemFormProps {
   value: OrcamentoItemValues;
   onChange: (value: OrcamentoItemValues) => void;
   onRemove: () => void;
   substratos: SubstratoOpcao[];
   equipamentos: EquipamentoOpcao[];
-  parametros: { custoMaoObraHoraPadrao: number; percentualCustosIndiretosPadrao: number };
+  acabamentos: AcabamentoOpcao[];
+  parametros: {
+    custoMaoObraHoraPadrao: number;
+    percentualCustosIndiretosPadrao: number;
+    impostosPercentualPadrao: number;
+    comissaoPercentualPadrao: number;
+    despesasFinanceirasPercentualPadrao: number;
+  };
+}
+
+function acabamentoVazio(): OrcamentoItemAcabamentoValues {
+  return { acabamentoId: null, descricaoAvulsa: "", quantidade: null, valorAvulso: 0 };
+}
+
+function custoTotalAcabamentos(
+  itens: OrcamentoItemAcabamentoValues[],
+  catalogo: AcabamentoOpcao[],
+  tiragem: number
+): number {
+  return itens.reduce((soma, item) => {
+    const acabamento = item.acabamentoId ? catalogo.find((a) => a.id === item.acabamentoId) ?? null : null;
+    return (
+      soma +
+      calcularCustoAcabamento(
+        { acabamento, quantidade: item.quantidade, valorAvulso: item.valorAvulso },
+        tiragem
+      )
+    );
+  }, 0);
 }
 
 function calcularPreview(
   value: OrcamentoItemValues,
   substratos: SubstratoOpcao[],
   equipamentos: EquipamentoOpcao[],
+  acabamentos: AcabamentoOpcao[],
   parametros: OrcamentoItemFormProps["parametros"]
 ): { custoCalculado: number; precoFinal: number } | null {
   const substrato = substratos.find((s) => s.id === value.substratoId);
@@ -71,11 +122,13 @@ function calcularPreview(
     tiragem: value.tiragem,
     equipamento,
     chapa,
-    chapaQuantidade: value.chapaQuantidade,
+    coresFrente: value.coresFrente,
+    coresVerso: value.coresVerso,
     tinta,
     tintaQuantidade: value.tintaQuantidade,
     substratoFolhas: value.substratoFolhas,
-    acabamentoCusto: value.acabamentoCusto,
+    acabamentoCustoTotal: custoTotalAcabamentos(value.acabamentos, acabamentos, value.tiragem),
+    tipoMarkup: value.tipoMarkup,
     margemLucro: value.margemLucro,
     parametros,
   };
@@ -93,18 +146,40 @@ export default function OrcamentoItemForm({
   onRemove,
   substratos,
   equipamentos,
+  acabamentos,
   parametros,
 }: OrcamentoItemFormProps) {
-  const preview = calcularPreview(value, substratos, equipamentos, parametros);
+  const preview = calcularPreview(value, substratos, equipamentos, acabamentos, parametros);
   const substratoSelecionado = substratos.find((s) => s.id === value.substratoId);
   const substratoPorFolha = substratoSelecionado?.unidadeMedida === "folha";
   const sugestoesAproveitamento =
-    value.tipo === "OFFSET" && value.larguraCm > 0 && value.alturaCm > 0 && value.tiragem > 0
-      ? sugerirAproveitamento(value.larguraCm, value.alturaCm, value.tiragem)
+    substratoPorFolha && value.larguraCm > 0 && value.alturaCm > 0 && value.tiragem > 0
+      ? value.tipo === "OFFSET"
+        ? sugerirAproveitamento(value.larguraCm, value.alturaCm, value.tiragem)
+        : sugerirAproveitamentoDigital(value.larguraCm, value.alturaCm, value.tiragem)
       : [];
+  const melhorAproveitamento = sugestoesAproveitamento[0] ?? null;
 
   function set<K extends keyof OrcamentoItemValues>(key: K, val: OrcamentoItemValues[K]) {
     onChange({ ...value, [key]: val });
+  }
+
+  function adicionarAcabamento() {
+    set("acabamentos", [...value.acabamentos, acabamentoVazio()]);
+  }
+
+  function atualizarAcabamento(index: number, val: OrcamentoItemAcabamentoValues) {
+    set(
+      "acabamentos",
+      value.acabamentos.map((a, i) => (i === index ? val : a))
+    );
+  }
+
+  function removerAcabamento(index: number) {
+    set(
+      "acabamentos",
+      value.acabamentos.filter((_, i) => i !== index)
+    );
   }
 
   return (
@@ -131,7 +206,8 @@ export default function OrcamentoItemForm({
               ...value,
               tipo,
               chapaId: tipo === "DIGITAL" ? null : value.chapaId,
-              chapaQuantidade: tipo === "DIGITAL" ? null : value.chapaQuantidade,
+              coresFrente: tipo === "DIGITAL" ? null : value.coresFrente,
+              coresVerso: tipo === "DIGITAL" ? null : value.coresVerso,
               tintaId: tipo === "DIGITAL" ? null : value.tintaId,
               tintaQuantidade: tipo === "DIGITAL" ? null : value.tintaQuantidade,
             });
@@ -152,13 +228,22 @@ export default function OrcamentoItemForm({
       </div>
 
       {substratoPorFolha && (
-        <input
-          type="number"
-          placeholder="Quantidade de folhas"
-          value={value.substratoFolhas ?? ""}
-          onChange={(e) => set("substratoFolhas", e.target.value === "" ? null : Number(e.target.value))}
-          className="w-full rounded border px-3 py-2"
-        />
+        <div className="space-y-1">
+          <input
+            type="number"
+            placeholder={
+              melhorAproveitamento
+                ? `Quantidade de folhas (auto: ${melhorAproveitamento.folhasNecessarias})`
+                : "Quantidade de folhas"
+            }
+            value={value.substratoFolhas ?? ""}
+            onChange={(e) => set("substratoFolhas", e.target.value === "" ? null : Number(e.target.value))}
+            className="w-full rounded border px-3 py-2"
+          />
+          <p className="text-xs text-gray-400">
+            Deixe em branco para calcular automaticamente pelo melhor aproveitamento de papel.
+          </p>
+        </div>
       )}
 
       <div className="grid grid-cols-3 gap-3">
@@ -203,13 +288,27 @@ export default function OrcamentoItemForm({
               getLabel={(s) => s.nome}
               placeholder="Chapa"
             />
-            <input
-              type="number"
-              placeholder="Qtd. chapas (cores)"
-              value={value.chapaQuantidade ?? ""}
-              onChange={(e) => set("chapaQuantidade", e.target.value === "" ? null : Number(e.target.value))}
-              className="w-full rounded border px-3 py-2"
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                placeholder="Cores frente"
+                value={value.coresFrente ?? ""}
+                onChange={(e) => set("coresFrente", e.target.value === "" ? null : Number(e.target.value))}
+                className="rounded border px-3 py-2"
+              />
+              <input
+                type="number"
+                placeholder="Cores verso"
+                value={value.coresVerso ?? ""}
+                onChange={(e) => set("coresVerso", e.target.value === "" ? null : Number(e.target.value))}
+                className="rounded border px-3 py-2"
+              />
+            </div>
+            {value.chapaId && (
+              <p className="text-sm text-gray-500">
+                Chapas calculadas: {calcularQuantidadeChapas(value.coresFrente, value.coresVerso)}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Combobox
@@ -230,7 +329,7 @@ export default function OrcamentoItemForm({
         </div>
       )}
 
-      {value.tipo === "OFFSET" && sugestoesAproveitamento.length > 0 && (
+      {sugestoesAproveitamento.length > 0 && (
         <div className="rounded border border-dashed border-ciano p-3 text-sm">
           <p className="mb-1 font-medium text-marinho">Melhor aproveitamento de papel</p>
           <ul className="space-y-1 text-gray-600">
@@ -245,29 +344,125 @@ export default function OrcamentoItemForm({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3">
-        <input
-          type="text"
-          placeholder="Acabamento"
-          value={value.acabamentoDescricao}
-          onChange={(e) => set("acabamentoDescricao", e.target.value)}
+      <div className="space-y-2 rounded border border-dashed p-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-marinho">Acabamentos</p>
+          <button type="button" onClick={adicionarAcabamento} className="text-sm text-ciano">
+            + Adicionar acabamento
+          </button>
+        </div>
+        {value.acabamentos.map((acabamentoItem, index) => {
+          const catalogo = acabamentoItem.acabamentoId
+            ? acabamentos.find((a) => a.id === acabamentoItem.acabamentoId) ?? null
+            : null;
+          const custoLinha = calcularCustoAcabamento(
+            { acabamento: catalogo, quantidade: acabamentoItem.quantidade, valorAvulso: acabamentoItem.valorAvulso },
+            value.tiragem
+          );
+          return (
+            <div key={index} className="grid grid-cols-[1fr_auto] items-start gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={acabamentoItem.acabamentoId ?? "AVULSO"}
+                  onChange={(e) => {
+                    const id = e.target.value === "AVULSO" ? null : e.target.value;
+                    atualizarAcabamento(index, {
+                      acabamentoId: id,
+                      descricaoAvulsa: id ? "" : acabamentoItem.descricaoAvulsa,
+                      quantidade: null,
+                      valorAvulso: 0,
+                    });
+                  }}
+                  className="rounded border px-3 py-2"
+                >
+                  <option value="AVULSO">Avulso (descrição + valor manual)</option>
+                  {acabamentos.map((a) => (
+                    <option key={a.id} value={a.id}>{a.nome}</option>
+                  ))}
+                </select>
+
+                {catalogo ? (
+                  catalogo.tipoCalculo === "POR_UNIDADE" ? (
+                    <input
+                      type="number"
+                      placeholder={`Quantidade (padrão: tiragem = ${value.tiragem})`}
+                      value={acabamentoItem.quantidade ?? ""}
+                      onChange={(e) =>
+                        atualizarAcabamento(index, {
+                          ...acabamentoItem,
+                          quantidade: e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                      className="rounded border px-3 py-2"
+                    />
+                  ) : (
+                    <span className="flex items-center text-sm text-gray-500">
+                      Custo: R$ {custoLinha.toFixed(2)}
+                    </span>
+                  )
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Descrição do acabamento"
+                    value={acabamentoItem.descricaoAvulsa}
+                    onChange={(e) =>
+                      atualizarAcabamento(index, { ...acabamentoItem, descricaoAvulsa: e.target.value })
+                    }
+                    className="rounded border px-3 py-2"
+                  />
+                )}
+
+                {!catalogo && (
+                  <input
+                    type="number"
+                    placeholder="Valor (R$)"
+                    value={acabamentoItem.valorAvulso || ""}
+                    onChange={(e) =>
+                      atualizarAcabamento(index, { ...acabamentoItem, valorAvulso: Number(e.target.value) })
+                    }
+                    className="rounded border px-3 py-2"
+                  />
+                )}
+
+                {catalogo && catalogo.tipoCalculo === "POR_UNIDADE" && (
+                  <span className="flex items-center text-sm text-gray-500">
+                    Custo: R$ {custoLinha.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <button type="button" onClick={() => removerAcabamento(index)} className="text-sm text-rosa">
+                Remover
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <select
+          value={value.tipoMarkup}
+          onChange={(e) => set("tipoMarkup", e.target.value as "MULTIPLICADOR" | "DIVISOR")}
           className="rounded border px-3 py-2"
-        />
+        >
+          <option value="MULTIPLICADOR">Markup multiplicador (custo × margem)</option>
+          <option value="DIVISOR">Markup divisor (impostos + comissão + despesas + lucro)</option>
+        </select>
         <input
           type="number"
-          placeholder="Custo do acabamento"
-          value={value.acabamentoCusto || ""}
-          onChange={(e) => set("acabamentoCusto", Number(e.target.value))}
-          className="rounded border px-3 py-2"
-        />
-        <input
-          type="number"
-          placeholder="Margem de lucro (%)"
+          placeholder={value.tipoMarkup === "DIVISOR" ? "Lucro desejado (%)" : "Margem de lucro (%)"}
           value={value.margemLucro || ""}
           onChange={(e) => set("margemLucro", Number(e.target.value))}
           className="rounded border px-3 py-2"
         />
       </div>
+
+      {value.tipoMarkup === "DIVISOR" && (
+        <p className="text-xs text-gray-400">
+          Markup divisor = 1 − impostos ({parametros.impostosPercentualPadrao}%) − comissão (
+          {parametros.comissaoPercentualPadrao}%) − despesas financeiras (
+          {parametros.despesasFinanceirasPercentualPadrao}%) − lucro desejado ({value.margemLucro || 0}%)
+        </p>
+      )}
 
       <div className="text-right text-sm">
         {preview ? (

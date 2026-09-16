@@ -42,12 +42,21 @@ export default async function OrcamentoDetalhePage(props: { params: Promise<{ id
             tiragem: item.tiragem,
             equipamentoId: item.equipamentoId,
             chapaId: item.chapaId,
-            chapaQuantidade: item.chapaQuantidade,
+            coresFrente: item.coresFrente,
+            coresVerso: item.coresVerso,
             tintaId: item.tintaId,
             tintaQuantidade: item.tintaQuantidade,
             substratoFolhas: item.substratoFolhas,
-            acabamentoDescricao: item.acabamentoDescricao ?? "",
-            acabamentoCusto: item.acabamentoCusto,
+            acabamentos: item.acabamentos
+              .slice()
+              .sort((a, b) => a.ordem - b.ordem)
+              .map((a) => ({
+                acabamentoId: a.acabamentoId,
+                descricaoAvulsa: a.descricaoAvulsa ?? "",
+                quantidade: a.quantidade,
+                valorAvulso: a.acabamentoId ? 0 : a.custoCalculado,
+              })),
+            tipoMarkup: item.tipoMarkup as "MULTIPLICADOR" | "DIVISOR",
             margemLucro: item.margemLucro,
           })),
       }}

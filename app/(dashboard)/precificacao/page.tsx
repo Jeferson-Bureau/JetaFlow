@@ -13,10 +13,15 @@ interface Substrato {
   ativo: boolean;
 }
 interface Equipamento { id: string; nome: string; tipo: string; formatoMaximo: string; ativo: boolean; }
+interface Acabamento {
+  id: string; nome: string; categoria: string; tipoCalculo: string;
+  valorFixo?: number | null; valorPorUnidade?: number | null; ativo: boolean;
+}
 
 export default function PrecificacaoPage() {
   const [substratos, setSubstratos] = useState<Substrato[]>([]);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
+  const [acabamentos, setAcabamentos] = useState<Acabamento[]>([]);
 
   useEffect(() => {
     fetch("/api/substratos").then((r) => r.json()).then(setSubstratos);
@@ -24,6 +29,10 @@ export default function PrecificacaoPage() {
 
   useEffect(() => {
     fetch("/api/equipamentos").then((r) => r.json()).then(setEquipamentos);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/acabamentos").then((r) => r.json()).then(setAcabamentos);
   }, []);
 
   return (
@@ -74,6 +83,37 @@ export default function PrecificacaoPage() {
               <td className="py-2">{e.tipo}</td>
               <td className="py-2">{e.formatoMaximo}</td>
               <td className="py-2">{e.ativo ? "Ativo" : "Inativo"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="mt-10 mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-marinho">Acabamentos</h2>
+        <Link href="/precificacao/acabamentos/novo" className="rounded bg-ciano px-4 py-2 text-white">Novo acabamento</Link>
+      </div>
+      <table className="w-full text-left">
+        <thead>
+          <tr className="border-b">
+            <th className="py-2">Nome</th>
+            <th className="py-2">Categoria</th>
+            <th className="py-2">Cálculo</th>
+            <th className="py-2">Valor</th>
+            <th className="py-2">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {acabamentos.map((a) => (
+            <tr key={a.id} className="border-b hover:bg-gray-50">
+              <td className="py-2"><Link href={`/precificacao/acabamentos/${a.id}`}>{a.nome}</Link></td>
+              <td className="py-2">{a.categoria}</td>
+              <td className="py-2">{a.tipoCalculo === "FIXO" ? "Fixo" : "Por unidade"}</td>
+              <td className="py-2">
+                {a.tipoCalculo === "FIXO"
+                  ? (a.valorFixo != null ? `R$ ${a.valorFixo.toFixed(2)}` : "—")
+                  : (a.valorPorUnidade != null ? `R$ ${a.valorPorUnidade.toFixed(2)} / un.` : "—")}
+              </td>
+              <td className="py-2">{a.ativo ? "Ativo" : "Inativo"}</td>
             </tr>
           ))}
         </tbody>

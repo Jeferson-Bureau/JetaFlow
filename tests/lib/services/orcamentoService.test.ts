@@ -21,10 +21,14 @@ async function seedCatalogo() {
   });
   await prisma.parametroCalculo.upsert({
     where: { id: 1 },
-    update: { margemLucroPadrao: 25, custoMaoObraHoraPadrao: 30, percentualCustosIndiretosPadrao: 10 },
+    update: {
+      margemLucroPadrao: 25, custoMaoObraHoraPadrao: 30, percentualCustosIndiretosPadrao: 10,
+      impostosPercentualPadrao: 10, comissaoPercentualPadrao: 5, despesasFinanceirasPercentualPadrao: 2,
+    },
     create: {
       id: 1, margemLucroPadrao: 25, custoMaoObraHoraPadrao: 30,
       percentualCustosIndiretosPadrao: 10, validadePadraoDias: 15,
+      impostosPercentualPadrao: 10, comissaoPercentualPadrao: 5, despesasFinanceirasPercentualPadrao: 2,
     },
   });
   const cliente = await prisma.cliente.create({
@@ -36,7 +40,10 @@ async function seedCatalogo() {
   const equipamento = await prisma.equipamento.create({
     data: { nome: "Xerox AltaLink", tipo: "DIGITAL", velocidade: 10, unidadeVelocidade: "unidades/min", formatoMaximo: "A3", custoHora: 120, tempoSetupMin: 15, percentualPerda: 5, acabamentosSuportados: "[]" },
   });
-  return { cliente, substrato, equipamento };
+  const acabamento = await prisma.acabamento.create({
+    data: { nome: "Hot stamping", categoria: "HOT_STAMPING", tipoCalculo: "FIXO", valorFixo: 20, percentualPerda: 0 },
+  });
+  return { cliente, substrato, equipamento, acabamento };
 }
 
 describe("orcamentoService", () => {
@@ -58,7 +65,8 @@ describe("orcamentoService", () => {
           alturaCm: 50,
           tiragem: 100,
           equipamentoId: seed.equipamento.id,
-          acabamentoCusto: 20,
+          acabamentos: [{ acabamentoId: seed.acabamento.id }],
+          tipoMarkup: "MULTIPLICADOR" as const,
           margemLucro: 25,
         },
       ],
@@ -68,12 +76,63 @@ describe("orcamentoService", () => {
     expect(orcamento.status).toBe("RASCUNHO");
     expect(orcamento.validadeDias).toBe(15);
     expect(orcamento.itens[0].precoFinal).toBeCloseTo(1251.25, 5);
+    expect(orcamento.itens[0].acabamentos).toHaveLength(1);
+    expect(orcamento.itens[0].acabamentos[0].custoCalculado).toBe(20);
+  });
+
+  it("calculates chapaQuantidade automatically from coresFrente and coresVerso", async () => {
+    const chapa = await prisma.substrato.create({
+      data: { nome: "Chapa CTP", tipo: "CHAPA_OFFSET", unidadeMedida: "unidade", custoUnitario: 15, atributos: "{}" },
+    });
+
+    const orcamento = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{
+        descricao: "Folder 4x4", tipo: "OFFSET", substratoId: seed.substrato.id,
+        larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id,
+        chapaId: chapa.id, coresFrente: 4, coresVerso: 4,
+        acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0,
+      }],
+    });
+
+    expect(orcamento.itens[0].chapaQuantidade).toBe(8);
+  });
+
+  it("prices an item with markup DIVISOR using impostos/comissão/despesas financeiras from parâmetros", async () => {
+    const orcamento = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{
+        descricao: "Item divisor", tipo: "DIGITAL", substratoId: seed.substrato.id,
+        larguraCm: 100, alturaCm: 50, tiragem: 100, equipamentoId: seed.equipamento.id,
+        acabamentos: [], tipoMarkup: "DIVISOR" as const, margemLucro: 15,
+      }],
+    });
+
+    expect(orcamento.itens[0].custoCalculado).toBeCloseTo(979, 5);
+    expect(orcamento.itens[0].precoFinal).toBeCloseTo(979 / 0.68, 5);
+  });
+
+  it("calculates substratoFolhas automatically from the best aproveitamento when not informed", async () => {
+    const papelPorFolha = await prisma.substrato.create({
+      data: { nome: "Couché 300g folha", tipo: "PAPEL", unidadeMedida: "folha", custoUnitario: 2, atributos: "{}" },
+    });
+
+    const orcamento = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{
+        descricao: "Cartão de visita", tipo: "DIGITAL", substratoId: papelPorFolha.id,
+        larguraCm: 9, alturaCm: 5, tiragem: 1000, equipamentoId: seed.equipamento.id,
+        acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0,
+      }],
+    });
+
+    expect(orcamento.itens[0].substratoFolhas).toBeGreaterThan(0);
   });
 
   it("lists and searches by cliente nome", async () => {
     await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
     const resultados = await listarOrcamentos("Cliente Teste");
     expect(resultados).toHaveLength(1);
@@ -88,12 +147,12 @@ describe("orcamentoService", () => {
   it("updates an orcamento's itens, recomputing prices server-side", async () => {
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 100, alturaCm: 50, tiragem: 100, equipamentoId: seed.equipamento.id, acabamentoCusto: 20, margemLucro: 25 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 100, alturaCm: 50, tiragem: 100, equipamentoId: seed.equipamento.id, acabamentos: [{ acabamentoId: seed.acabamento.id }], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 25 }],
     });
 
     const atualizado = await atualizarOrcamento(criado.id, {
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item editado", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 100, alturaCm: 50, tiragem: 100, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 25 }],
+      itens: [{ descricao: "Item editado", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 100, alturaCm: 50, tiragem: 100, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 25 }],
     });
 
     expect(atualizado.itens[0].descricao).toBe("Item editado");
@@ -101,7 +160,7 @@ describe("orcamentoService", () => {
   });
 
   it("rejects updating an APROVADO orcamento", async () => {
-    const itemInput = { descricao: "Item", tipo: "DIGITAL" as const, substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 };
+    const itemInput = { descricao: "Item", tipo: "DIGITAL" as const, substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 };
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
       itens: [itemInput],
@@ -116,7 +175,7 @@ describe("orcamentoService", () => {
   it("sends an orcamento, moving RASCUNHO to ENVIADO", async () => {
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
     const enviado = await enviarOrcamento(criado.id);
     expect(enviado.status).toBe("ENVIADO");
@@ -126,7 +185,7 @@ describe("orcamentoService", () => {
   it("rejects approving a RASCUNHO orcamento (must be sent first)", async () => {
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
     await expect(aprovarOrcamento(criado.id)).rejects.toThrow(ForbiddenError);
   });
@@ -134,7 +193,7 @@ describe("orcamentoService", () => {
   it("approves a sent orcamento", async () => {
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
     await enviarOrcamento(criado.id);
     const aprovado = await aprovarOrcamento(criado.id);
@@ -145,7 +204,7 @@ describe("orcamentoService", () => {
   it("rejects approving an expired orcamento", async () => {
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
     await enviarOrcamento(criado.id);
     await prisma.orcamento.update({
@@ -158,7 +217,7 @@ describe("orcamentoService", () => {
   it("duplicates an orcamento into a fresh RASCUNHO with a new numero", async () => {
     const original = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item original", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item original", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
     await enviarOrcamento(original.id);
 
@@ -172,10 +231,61 @@ describe("orcamentoService", () => {
     expect(copia.itens[0].id).not.toBe(original.itens[0].id);
   });
 
+  it("duplicates an orcamento carrying over catálogo and avulso acabamentos", async () => {
+    const original = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{
+        descricao: "Item com acabamentos", tipo: "DIGITAL", substratoId: seed.substrato.id,
+        larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id,
+        acabamentos: [
+          { acabamentoId: seed.acabamento.id },
+          { descricaoAvulsa: "Corte especial", valorAvulso: 15 },
+        ],
+        tipoMarkup: "MULTIPLICADOR" as const,
+        margemLucro: 0,
+      }],
+    });
+
+    const copia = await duplicarOrcamento(original.id);
+    expect(copia.itens[0].acabamentos).toHaveLength(2);
+    const total = copia.itens[0].acabamentos.reduce((soma, a) => soma + a.custoCalculado, 0);
+    expect(total).toBe(35);
+  });
+
+  it("creates an item with an avulso acabamento", async () => {
+    const orcamento = await criarOrcamento({
+      clienteId: seed.cliente.id,
+      itens: [{
+        descricao: "Item avulso", tipo: "DIGITAL", substratoId: seed.substrato.id,
+        larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id,
+        acabamentos: [{ descricaoAvulsa: "Verniz localizado", valorAvulso: 15 }],
+        tipoMarkup: "MULTIPLICADOR" as const,
+        margemLucro: 0,
+      }],
+    });
+    expect(orcamento.itens[0].acabamentos[0].descricaoAvulsa).toBe("Verniz localizado");
+    expect(orcamento.itens[0].acabamentos[0].custoCalculado).toBe(15);
+  });
+
+  it("throws NotFoundError when acabamentoId does not exist", async () => {
+    await expect(
+      criarOrcamento({
+        clienteId: seed.cliente.id,
+        itens: [{
+          descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id,
+          larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id,
+          acabamentos: [{ acabamentoId: "id-inexistente" }],
+          tipoMarkup: "MULTIPLICADOR" as const,
+          margemLucro: 0,
+        }],
+      })
+    ).rejects.toThrow("acabamento");
+  });
+
   it("rejects deleting an APROVADO orcamento", async () => {
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
     await enviarOrcamento(criado.id);
     await aprovarOrcamento(criado.id);
@@ -187,7 +297,7 @@ describe("orcamentoService", () => {
   it("deletes a RASCUNHO orcamento", async () => {
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
 
     await excluirOrcamento(criado.id);
@@ -198,7 +308,7 @@ describe("orcamentoService", () => {
   it("estaExpirado is false for an APROVADO orcamento even past validadeDias", async () => {
     const criado = await criarOrcamento({
       clienteId: seed.cliente.id,
-      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentoCusto: 0, margemLucro: 0 }],
+      itens: [{ descricao: "Item", tipo: "DIGITAL", substratoId: seed.substrato.id, larguraCm: 10, alturaCm: 10, tiragem: 1, equipamentoId: seed.equipamento.id, acabamentos: [], tipoMarkup: "MULTIPLICADOR" as const, margemLucro: 0 }],
     });
     await enviarOrcamento(criado.id);
     const aprovado = await aprovarOrcamento(criado.id);

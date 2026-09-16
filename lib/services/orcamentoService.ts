@@ -4,6 +4,7 @@ import { obterParametrosCalculo } from "@/lib/services/parametroCalculoService";
 import {
   calcularItem,
   calcularEstaExpirado,
+  calcularCustoAcabamento,
   type ItemCalculoInput,
 } from "@/lib/services/orcamentoCalculo";
 import type { OrcamentoInput } from "@/lib/validators/orcamento";
@@ -11,7 +12,7 @@ import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { Prisma } from "@prisma/client";
 
 const INCLUDE_ITENS_E_CLIENTE = {
-  itens: true,
+  itens: { include: { acabamentos: true } },
   cliente: true,
   ordemServico: true,
 } satisfies Prisma.OrcamentoInclude;
@@ -39,6 +40,26 @@ async function calcularItens(itens: OrcamentoInput["itens"]) {
           ? await prisma.substrato.findUniqueOrThrow({ where: { id: item.tintaId } })
           : null;
 
+        const acabamentosResolvidos = await Promise.all(
+          item.acabamentos.map(async (acabamentoItem, ordemAcabamento) => {
+            const acabamento = acabamentoItem.acabamentoId
+              ? await prisma.acabamento.findUniqueOrThrow({ where: { id: acabamentoItem.acabamentoId } })
+              : null;
+            const custoCalculado = calcularCustoAcabamento(
+              { acabamento, quantidade: acabamentoItem.quantidade, valorAvulso: acabamentoItem.valorAvulso },
+              item.tiragem
+            );
+            return {
+              acabamentoId: acabamentoItem.acabamentoId ?? null,
+              descricaoAvulsa: acabamentoItem.descricaoAvulsa ?? null,
+              quantidade: acabamentoItem.quantidade ?? null,
+              custoCalculado,
+              ordem: ordemAcabamento,
+            };
+          })
+        );
+        const acabamentoCustoTotal = acabamentosResolvidos.reduce((soma, a) => soma + a.custoCalculado, 0);
+
         const calculoInput: ItemCalculoInput = {
           tipo: item.tipo,
           substrato,
@@ -47,15 +68,17 @@ async function calcularItens(itens: OrcamentoInput["itens"]) {
           tiragem: item.tiragem,
           equipamento,
           chapa,
-          chapaQuantidade: item.chapaQuantidade ?? null,
+          coresFrente: item.coresFrente ?? null,
+          coresVerso: item.coresVerso ?? null,
           tinta,
           tintaQuantidade: item.tintaQuantidade ?? null,
           substratoFolhas: item.substratoFolhas ?? null,
-          acabamentoCusto: item.acabamentoCusto,
+          acabamentoCustoTotal,
+          tipoMarkup: item.tipoMarkup,
           margemLucro: item.margemLucro,
           parametros,
         };
-        const { custoCalculado, precoFinal } = calcularItem(calculoInput);
+        const { custoCalculado, precoFinal, chapaQuantidade, substratoFolhas } = calcularItem(calculoInput);
 
         return {
           descricao: item.descricao,
@@ -66,12 +89,14 @@ async function calcularItens(itens: OrcamentoInput["itens"]) {
           tiragem: item.tiragem,
           equipamentoId: item.equipamentoId,
           chapaId: item.chapaId ?? null,
-          chapaQuantidade: item.chapaQuantidade ?? null,
+          coresFrente: item.coresFrente ?? null,
+          coresVerso: item.coresVerso ?? null,
+          chapaQuantidade,
           tintaId: item.tintaId ?? null,
           tintaQuantidade: item.tintaQuantidade ?? null,
-          substratoFolhas: item.substratoFolhas ?? null,
-          acabamentoDescricao: item.acabamentoDescricao ?? null,
-          acabamentoCusto: item.acabamentoCusto,
+          substratoFolhas,
+          acabamentos: { create: acabamentosResolvidos },
+          tipoMarkup: item.tipoMarkup,
           margemLucro: item.margemLucro,
           custoCalculado,
           precoFinal,
@@ -81,7 +106,7 @@ async function calcularItens(itens: OrcamentoInput["itens"]) {
     );
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
-      throw new NotFoundError("Substrato, equipamento, chapa ou tinta informado não foi encontrado");
+      throw new NotFoundError("Substrato, equipamento, chapa, tinta ou acabamento informado não foi encontrado");
     }
     throw error;
   }
@@ -196,12 +221,21 @@ export async function duplicarOrcamento(id: string): Promise<OrcamentoComItens> 
       tiragem: item.tiragem,
       equipamentoId: item.equipamentoId,
       chapaId: item.chapaId,
-      chapaQuantidade: item.chapaQuantidade,
+      coresFrente: item.coresFrente,
+      coresVerso: item.coresVerso,
       tintaId: item.tintaId,
       tintaQuantidade: item.tintaQuantidade,
       substratoFolhas: item.substratoFolhas,
-      acabamentoDescricao: item.acabamentoDescricao,
-      acabamentoCusto: item.acabamentoCusto,
+      acabamentos: item.acabamentos
+        .slice()
+        .sort((a, b) => a.ordem - b.ordem)
+        .map((a) => ({
+          acabamentoId: a.acabamentoId,
+          descricaoAvulsa: a.descricaoAvulsa,
+          quantidade: a.quantidade,
+          valorAvulso: a.acabamentoId ? null : a.custoCalculado,
+        })),
+      tipoMarkup: item.tipoMarkup as "MULTIPLICADOR" | "DIVISOR",
       margemLucro: item.margemLucro,
     }));
 

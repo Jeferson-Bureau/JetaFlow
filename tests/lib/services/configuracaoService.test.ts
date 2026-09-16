@@ -49,7 +49,9 @@ describe("configuracaoService — parâmetros", () => {
   it("updates parâmetros for ADMIN", async () => {
     const updated = await updateParametros("ADMIN", {
       margemLucroPadrao: 25, custoMaoObraHoraPadrao: 40, percentualCustosIndiretosPadrao: 10,
+      impostosPercentualPadrao: 10, comissaoPercentualPadrao: 5, despesasFinanceirasPercentualPadrao: 2,
     });
     expect(updated.margemLucroPadrao).toBe(25);
+    expect(updated.impostosPercentualPadrao).toBe(10);
   });
 });

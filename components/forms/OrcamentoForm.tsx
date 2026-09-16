@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Combobox from "@/components/ui/Combobox";
-import OrcamentoItemForm, { type OrcamentoItemValues } from "@/components/forms/OrcamentoItemForm";
+import OrcamentoItemForm, {
+  type OrcamentoItemValues,
+  type AcabamentoOpcao,
+} from "@/components/forms/OrcamentoItemForm";
 
 interface Cliente {
   id: string;
@@ -33,6 +36,9 @@ interface Parametros {
   margemLucroPadrao: number;
   custoMaoObraHoraPadrao: number;
   percentualCustosIndiretosPadrao: number;
+  impostosPercentualPadrao: number;
+  comissaoPercentualPadrao: number;
+  despesasFinanceirasPercentualPadrao: number;
 }
 
 function itemVazio(margemPadrao: number): OrcamentoItemValues {
@@ -45,12 +51,13 @@ function itemVazio(margemPadrao: number): OrcamentoItemValues {
     tiragem: 0,
     equipamentoId: "",
     chapaId: null,
-    chapaQuantidade: null,
+    coresFrente: null,
+    coresVerso: null,
     tintaId: null,
     tintaQuantidade: null,
     substratoFolhas: null,
-    acabamentoDescricao: "",
-    acabamentoCusto: 0,
+    acabamentos: [],
+    tipoMarkup: "MULTIPLICADOR",
     margemLucro: margemPadrao,
   };
 }
@@ -67,6 +74,7 @@ export default function OrcamentoForm({ initial }: { initial?: OrcamentoFormInit
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [substratos, setSubstratos] = useState<SubstratoOpcao[]>([]);
   const [equipamentos, setEquipamentos] = useState<EquipamentoOpcao[]>([]);
+  const [acabamentos, setAcabamentos] = useState<AcabamentoOpcao[]>([]);
   const [parametros, setParametros] = useState<Parametros | null>(null);
   const [erro, setErro] = useState("");
 
@@ -79,12 +87,14 @@ export default function OrcamentoForm({ initial }: { initial?: OrcamentoFormInit
       fetch("/api/clientes").then((r) => (r.ok ? r.json() : Promise.reject())),
       fetch("/api/catalogo-precificacao/substratos").then((r) => (r.ok ? r.json() : Promise.reject())),
       fetch("/api/catalogo-precificacao/equipamentos").then((r) => (r.ok ? r.json() : Promise.reject())),
+      fetch("/api/catalogo-precificacao/acabamentos").then((r) => (r.ok ? r.json() : Promise.reject())),
       fetch("/api/parametros-calculo").then((r) => (r.ok ? r.json() : Promise.reject())),
     ])
-      .then(([clientesData, substratosData, equipamentosData, parametrosData]) => {
+      .then(([clientesData, substratosData, equipamentosData, acabamentosData, parametrosData]) => {
         setClientes(Array.isArray(clientesData) ? clientesData : []);
         setSubstratos(Array.isArray(substratosData) ? substratosData : []);
         setEquipamentos(Array.isArray(equipamentosData) ? equipamentosData : []);
+        setAcabamentos(Array.isArray(acabamentosData) ? acabamentosData : []);
         setParametros(parametrosData ?? null);
         if (!initial && itens.length === 0 && parametrosData) {
           setItens([itemVazio(parametrosData.margemLucroPadrao)]);
@@ -115,7 +125,12 @@ export default function OrcamentoForm({ initial }: { initial?: OrcamentoFormInit
       observacoes: observacoes || null,
       itens: itens.map((item) => ({
         ...item,
-        acabamentoDescricao: item.acabamentoDescricao || null,
+        acabamentos: item.acabamentos.map((a) => ({
+          acabamentoId: a.acabamentoId,
+          descricaoAvulsa: a.acabamentoId ? null : a.descricaoAvulsa || null,
+          quantidade: a.quantidade,
+          valorAvulso: a.acabamentoId ? null : a.valorAvulso,
+        })),
       })),
     };
 
@@ -168,6 +183,7 @@ export default function OrcamentoForm({ initial }: { initial?: OrcamentoFormInit
             onRemove={() => removerItem(index)}
             substratos={substratos}
             equipamentos={equipamentos}
+            acabamentos={acabamentos}
             parametros={parametros}
           />
         ))}

@@ -230,3 +230,49 @@ export function sugerirAproveitamento(
   candidatos.sort((a, b) => b.corte.pecas - a.corte.pecas);
   return candidatos;
 }
+
+export const FORMATOS_DIGITAL: { nome: string; larguraCm: number; alturaCm: number }[] = [
+  { nome: "A4", larguraCm: 21, alturaCm: 29.7 },
+  { nome: "A3", larguraCm: 29.7, alturaCm: 42 },
+  { nome: "SRA3", larguraCm: 32, alturaCm: 45 },
+];
+
+function pecasPorGrade(
+  folhaLarguraCm: number,
+  folhaAlturaCm: number,
+  pecaLarguraCm: number,
+  pecaAlturaCm: number
+): number {
+  return Math.floor(folhaLarguraCm / pecaLarguraCm) * Math.floor(folhaAlturaCm / pecaAlturaCm);
+}
+
+export function sugerirAproveitamentoDigital(
+  larguraCm: number,
+  alturaCm: number,
+  tiragem: number
+): SugestaoAproveitamento[] {
+  if (larguraCm <= 0 || alturaCm <= 0 || tiragem <= 0) return [];
+
+  const candidatos: SugestaoAproveitamento[] = [];
+
+  for (const formato of FORMATOS_DIGITAL) {
+    const pecasNormal = pecasPorGrade(formato.larguraCm, formato.alturaCm, larguraCm, alturaCm);
+    const pecasRotacionado = pecasPorGrade(formato.larguraCm, formato.alturaCm, alturaCm, larguraCm);
+    const rotacionar = pecasRotacionado > pecasNormal;
+    const pecas = rotacionar ? pecasRotacionado : pecasNormal;
+    if (pecas > 0) {
+      candidatos.push({
+        formatoPai: { larguraCm: formato.larguraCm, alturaCm: formato.alturaCm },
+        corte: {
+          larguraCm: rotacionar ? alturaCm : larguraCm,
+          alturaCm: rotacionar ? larguraCm : alturaCm,
+          pecas,
+        },
+        folhasNecessarias: Math.ceil(tiragem / pecas),
+      });
+    }
+  }
+
+  candidatos.sort((a, b) => b.corte.pecas - a.corte.pecas);
+  return candidatos;
+}
