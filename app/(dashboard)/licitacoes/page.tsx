@@ -11,6 +11,8 @@ interface LicitacaoListada {
   orgaoNome: string;
   objetoCompra: string;
   statusInterno: string;
+  valorTotalEstimado: number | null;
+  dataAberturaProposta: string | null;
   dataEncerramentoProposta: string | null;
 }
 
@@ -54,6 +56,8 @@ export default function LicitacoesPage() {
             <th className="py-2">Número</th>
             <th>Órgão</th>
             <th>Objeto</th>
+            <th>Valor estimado</th>
+            <th>Abertura da proposta</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -67,6 +71,10 @@ export default function LicitacoesPage() {
               </td>
               <td>{l.orgaoNome}</td>
               <td className="max-w-xs truncate">{l.objetoCompra}</td>
+              <td>{l.valorTotalEstimado != null ? `R$ ${l.valorTotalEstimado.toFixed(2)}` : "—"}</td>
+              <td>
+                {l.dataAberturaProposta ? new Date(l.dataAberturaProposta).toLocaleString("pt-BR") : "—"}
+              </td>
               <td>
                 <LicitacaoStatusBadge
                   statusInterno={l.statusInterno}
