@@ -8,16 +8,25 @@ async function main() {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return;
 
+  const senha = process.env.SEED_ADMIN_PASSWORD || "jetaflow123";
+
   await prisma.user.create({
     data: {
       nome: "Administrador",
       email,
-      senhaHash: await bcrypt.hash("jetaflow123", 10),
+      senhaHash: await bcrypt.hash(senha, 10),
       role: "ADMIN",
       ativo: true,
     },
   });
-  console.log(`Usuário admin criado: ${email} / senha: jetaflow123`);
+
+  if (process.env.SEED_ADMIN_PASSWORD) {
+    console.log(`Usuário admin criado: ${email} (senha definida via SEED_ADMIN_PASSWORD)`);
+  } else {
+    console.log(
+      `Usuário admin criado: ${email} / senha: jetaflow123 — ATENÇÃO: senha padrão de desenvolvimento, troque antes de ir para produção (defina SEED_ADMIN_PASSWORD ou altere pela tela de Usuários).`
+    );
+  }
 }
 
 main().finally(() => prisma.$disconnect());

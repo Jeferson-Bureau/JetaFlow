@@ -9,14 +9,15 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:backup": "node scripts/backup-db.js"
   },
   "dependencies": {
     "@prisma/client": "5.18.0",
     "@react-pdf/renderer": "3.4.4",
     "bcryptjs": "2.4.3",
-    "next": "14.2.5",
-    "next-auth": "4.24.7",
+    "next": "14.2.35",
+    "next-auth": "4.24.15",
     "qrcode": "1.5.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
