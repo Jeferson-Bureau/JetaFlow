@@ -5,7 +5,8 @@ import SubstratoForm from "@/components/forms/SubstratoForm";
 import { notFound } from "next/navigation";
 import type { tiposSubstrato } from "@/lib/validators/substrato";
 
-export default async function EditarSubstratoPage({ params }: { params: { id: string } }) {
+export default async function EditarSubstratoPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const role = await getSessionRole();
   let substrato;
   try {

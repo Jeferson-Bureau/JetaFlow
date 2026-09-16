@@ -7,7 +7,8 @@ import { buscarExpedicao } from "@/lib/services/expedicaoService";
 import { buscarOrdemServico } from "@/lib/services/ordemServicoService";
 import { EtiquetaPdfDocument } from "@/lib/pdf/etiquetaPdf";
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const role = await getSessionRole();
   if (!role) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 

@@ -4,7 +4,8 @@ import { buscarExpedicaoPorOS } from "@/lib/services/expedicaoService";
 import { NotFoundError } from "@/lib/errors";
 import OrdemServicoDetalheClient from "./OrdemServicoDetalheClient";
 
-export default async function OrdemServicoDetalhePage({ params }: { params: { id: string } }) {
+export default async function OrdemServicoDetalhePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   let ordem;
   try {
     ordem = await buscarOrdemServico(params.id);

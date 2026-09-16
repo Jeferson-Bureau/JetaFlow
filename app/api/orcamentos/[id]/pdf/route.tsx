@@ -5,7 +5,8 @@ import { handleApiError } from "@/lib/api-helpers";
 import { buscarOrcamento } from "@/lib/services/orcamentoService";
 import { OrcamentoPdfDocument } from "@/lib/pdf/orcamentoPdf";
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const role = await getSessionRole();
   if (!role) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 

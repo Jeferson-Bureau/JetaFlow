@@ -4,7 +4,8 @@ import { handleApiError } from "@/lib/api-helpers";
 import { ordemServicoInputSchema } from "@/lib/validators/ordemServico";
 import { buscarOrdemServico, atualizarOrdemServico } from "@/lib/services/ordemServicoService";
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const role = await getSessionRole();
   if (!role) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
@@ -16,7 +17,8 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const role = await getSessionRole();
   if (!role) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 

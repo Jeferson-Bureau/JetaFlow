@@ -4,7 +4,8 @@ import { handleApiError } from "@/lib/api-helpers";
 import { conferirVolume } from "@/lib/services/expedicaoService";
 import { conferirVolumeInputSchema } from "@/lib/validators/expedicao";
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const role = await getSessionRole();
   if (!role) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 

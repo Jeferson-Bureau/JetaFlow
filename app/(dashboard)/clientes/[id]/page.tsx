@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import ClienteForm from "@/components/forms/ClienteForm";
 import { notFound } from "next/navigation";
 
-export default async function EditarClientePage({ params }: { params: { id: string } }) {
+export default async function EditarClientePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const cliente = await prisma.cliente.findUnique({ where: { id: params.id } });
   if (!cliente) notFound();
 

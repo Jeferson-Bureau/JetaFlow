@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import FornecedorForm from "@/components/forms/FornecedorForm";
 import { notFound } from "next/navigation";
 
-export default async function EditarFornecedorPage({ params }: { params: { id: string } }) {
+export default async function EditarFornecedorPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const fornecedor = await prisma.fornecedor.findUnique({ where: { id: params.id } });
   if (!fornecedor) notFound();
 

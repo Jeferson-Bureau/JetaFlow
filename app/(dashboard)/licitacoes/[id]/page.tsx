@@ -4,7 +4,8 @@ import { buscarLicitacao } from "@/lib/services/licitacaoService";
 import { NotFoundError } from "@/lib/errors";
 import LicitacaoDetalheClient from "./LicitacaoDetalheClient";
 
-export default async function LicitacaoDetalhePage({ params }: { params: { id: string } }) {
+export default async function LicitacaoDetalhePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   let licitacao;
   try {
     licitacao = await buscarLicitacao(params.id);

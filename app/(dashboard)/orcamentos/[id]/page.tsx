@@ -3,7 +3,8 @@ import { buscarOrcamento } from "@/lib/services/orcamentoService";
 import { NotFoundError } from "@/lib/errors";
 import OrcamentoDetalheClient from "./OrcamentoDetalheClient";
 
-export default async function OrcamentoDetalhePage({ params }: { params: { id: string } }) {
+export default async function OrcamentoDetalhePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   let orcamento;
   try {
     orcamento = await buscarOrcamento(params.id);

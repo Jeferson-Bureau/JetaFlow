@@ -5,7 +5,8 @@ import EquipamentoForm from "@/components/forms/EquipamentoForm";
 import { notFound } from "next/navigation";
 import type { tiposEquipamento } from "@/lib/validators/equipamento";
 
-export default async function EditarEquipamentoPage({ params }: { params: { id: string } }) {
+export default async function EditarEquipamentoPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const role = await getSessionRole();
   let equipamento;
   try {

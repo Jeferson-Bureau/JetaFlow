@@ -4,7 +4,8 @@ import { buscarOrdemServico } from "@/lib/services/ordemServicoService";
 import { NotFoundError } from "@/lib/errors";
 import ConferenciaClient from "./ConferenciaClient";
 
-export default async function ConferenciaPage({ params }: { params: { id: string } }) {
+export default async function ConferenciaPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   let expedicao;
   try {
     expedicao = await buscarExpedicao(params.id);

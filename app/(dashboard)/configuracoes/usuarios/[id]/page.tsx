@@ -3,7 +3,8 @@ import UsuarioForm from "@/components/forms/UsuarioForm";
 import { notFound } from "next/navigation";
 import { getSessionRole, isAdmin } from "@/lib/permissions";
 
-export default async function EditarUsuarioPage({ params }: { params: { id: string } }) {
+export default async function EditarUsuarioPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const role = await getSessionRole();
   if (!isAdmin(role)) notFound();
 
