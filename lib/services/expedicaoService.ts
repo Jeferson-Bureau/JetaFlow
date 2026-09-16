@@ -49,6 +49,45 @@ export async function gerarExpedicao(
   });
 }
 
+export interface ExpedicaoListada {
+  id: string;
+  ordemServicoId: string;
+  numeroOS: string;
+  clienteNome: string;
+  totalVolumes: number;
+  volumesConferidos: number;
+  createdAt: Date;
+}
+
+export async function listarExpedicoes(): Promise<ExpedicaoListada[]> {
+  const expedicoes = await prisma.expedicao.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      ordemServicoId: true,
+      totalVolumes: true,
+      createdAt: true,
+      ordemServico: {
+        select: {
+          numero: true,
+          orcamento: { select: { cliente: { select: { nome: true } } } },
+        },
+      },
+      volumes: { select: { conferido: true } },
+    },
+  });
+
+  return expedicoes.map((e) => ({
+    id: e.id,
+    ordemServicoId: e.ordemServicoId,
+    numeroOS: e.ordemServico.numero,
+    clienteNome: e.ordemServico.orcamento.cliente.nome,
+    totalVolumes: e.totalVolumes,
+    volumesConferidos: e.volumes.filter((v) => v.conferido).length,
+    createdAt: e.createdAt,
+  }));
+}
+
 export async function buscarExpedicaoPorOS(ordemServicoId: string): Promise<ExpedicaoComVolumes> {
   const expedicao = await prisma.expedicao.findUnique({
     where: { ordemServicoId },

@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { prisma } from "@/lib/prisma";
-import { gerarExpedicao, buscarExpedicaoPorOS, buscarExpedicao, conferirVolume } from "@/lib/services/expedicaoService";
+import {
+  gerarExpedicao, buscarExpedicaoPorOS, buscarExpedicao, conferirVolume, listarExpedicoes,
+} from "@/lib/services/expedicaoService";
 
 async function seedOS() {
   const cliente = await prisma.cliente.create({
@@ -145,6 +147,49 @@ describe("expedicaoService", () => {
       await expect(conferirVolume(expedicao.id, codigo)).rejects.toThrow(
         "Este volume já foi conferido"
       );
+    });
+  });
+
+  describe("listarExpedicoes", () => {
+    it("returns an empty list when none exist", async () => {
+      expect(await listarExpedicoes()).toEqual([]);
+    });
+
+    it("lists expedicoes with OS/cliente context and conference progress", async () => {
+      const os = await seedOS();
+      const expedicao = await gerarExpedicao(os.id, { totalVolumes: 2 });
+      await conferirVolume(expedicao.id, expedicao.volumes[0].codigoInterno);
+
+      const lista = await listarExpedicoes();
+
+      expect(lista).toHaveLength(1);
+      expect(lista[0]).toMatchObject({
+        id: expedicao.id,
+        ordemServicoId: os.id,
+        numeroOS: "OS0001",
+        clienteNome: "Cliente Teste",
+        totalVolumes: 2,
+        volumesConferidos: 1,
+      });
+    });
+
+    it("orders by most recently generated first", async () => {
+      const os1 = await seedOS();
+      const primeira = await gerarExpedicao(os1.id, { totalVolumes: 1 });
+
+      const cliente2 = await prisma.cliente.create({
+        data: { tipo: "PJ", nome: "Cliente 2", documento: "00000000000272" },
+      });
+      const orcamento2 = await prisma.orcamento.create({
+        data: { numero: "ORC0002", clienteId: cliente2.id, validadeDias: 15, status: "APROVADO" },
+      });
+      const os2 = await prisma.ordemServico.create({
+        data: { numero: "OS0002", orcamentoId: orcamento2.id },
+      });
+      const segunda = await gerarExpedicao(os2.id, { totalVolumes: 1 });
+
+      const lista = await listarExpedicoes();
+      expect(lista.map((e) => e.id)).toEqual([segunda.id, primeira.id]);
     });
   });
 });

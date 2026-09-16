@@ -6,6 +6,7 @@ const modules = [
   { href: "/ordens-servico", label: "Ordens de Serviço" },
   { href: "/clientes", label: "Clientes" },
   { href: "/fornecedores", label: "Fornecedores" },
+  { href: "/etiquetas", label: "Etiquetas" },
   { href: "/licitacoes", label: "Licitações" },
   { href: "/precificacao", label: "Precificação" },
   { href: "/configuracoes", label: "Configurações" },
