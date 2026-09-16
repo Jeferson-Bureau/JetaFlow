@@ -1,11 +1,35 @@
-const cards = [
-  { label: "Orçamentos pendentes", value: "—" },
-  { label: "OS em produção", value: "—" },
-  { label: "Pedidos aguardando expedição", value: "—" },
-  { label: "Licitações em andamento", value: "—" },
-];
+import { listarOrcamentos, estaExpirado } from "@/lib/services/orcamentoService";
+import { listarOrdensServico } from "@/lib/services/ordemServicoService";
+import { listarLicitacoes } from "@/lib/services/licitacaoService";
 
-export default function PainelPage() {
+const STATUS_LICITACAO_EM_ANDAMENTO = ["ANALISANDO", "VAMOS_PARTICIPAR", "PROPOSTA_ENVIADA"];
+
+export default async function PainelPage() {
+  const [orcamentos, ordensServico, licitacoes] = await Promise.all([
+    listarOrcamentos(),
+    listarOrdensServico(),
+    listarLicitacoes(),
+  ]);
+
+  const orcamentosPendentes = orcamentos.filter(
+    (o) => (o.status === "RASCUNHO" || o.status === "ENVIADO") && !estaExpirado(o)
+  ).length;
+
+  const osEmProducao = ordensServico.filter((os) => os.estagio !== "CONCLUIDO").length;
+
+  const aguardandoExpedicao = ordensServico.filter((os) => os.estagio === "EXPEDICAO").length;
+
+  const licitacoesEmAndamento = licitacoes.filter((l) =>
+    STATUS_LICITACAO_EM_ANDAMENTO.includes(l.statusInterno)
+  ).length;
+
+  const cards = [
+    { label: "Orçamentos pendentes", value: orcamentosPendentes },
+    { label: "OS em produção", value: osEmProducao },
+    { label: "Pedidos aguardando expedição", value: aguardandoExpedicao },
+    { label: "Licitações em andamento", value: licitacoesEmAndamento },
+  ];
+
   return (
     <div>
       <h1 className="mb-4 text-2xl font-semibold text-marinho">Painel</h1>
