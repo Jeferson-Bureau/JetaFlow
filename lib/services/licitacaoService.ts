@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { parseNumeroControlePNCP, buscarContratacaoPNCP } from "@/lib/external/pncp";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
+import type { LicitacaoInternoInput } from "@/lib/validators/licitacao";
 import type { Licitacao } from "@prisma/client";
 
 export async function cadastrarLicitacao(numeroControlePNCP: string): Promise<Licitacao> {
@@ -59,4 +60,56 @@ export async function buscarLicitacao(id: string): Promise<Licitacao> {
   const licitacao = await prisma.licitacao.findUnique({ where: { id } });
   if (!licitacao) throw new NotFoundError();
   return licitacao;
+}
+
+export async function atualizarDadosPNCP(id: string): Promise<Licitacao> {
+  const licitacao = await buscarLicitacao(id);
+  const dados = await buscarContratacaoPNCP(
+    licitacao.cnpjOrgao,
+    licitacao.anoCompra,
+    licitacao.sequencialCompra
+  );
+  if (!dados) {
+    throw new NotFoundError("Licitação não encontrada no PNCP");
+  }
+
+  return prisma.licitacao.update({
+    where: { id },
+    data: {
+      orgaoNome: dados.orgaoNome,
+      unidadeNome: dados.unidadeNome,
+      numeroCompra: dados.numeroCompra,
+      objetoCompra: dados.objetoCompra,
+      modalidadeNome: dados.modalidadeNome,
+      situacaoCompraNome: dados.situacaoCompraNome,
+      valorTotalEstimado: dados.valorTotalEstimado,
+      valorTotalHomologado: dados.valorTotalHomologado,
+      dataAberturaProposta: dados.dataAberturaProposta ? new Date(dados.dataAberturaProposta) : null,
+      dataEncerramentoProposta: dados.dataEncerramentoProposta
+        ? new Date(dados.dataEncerramentoProposta)
+        : null,
+      dataAtualizacaoPNCP: new Date(),
+    },
+  });
+}
+
+export async function atualizarDadosInternos(
+  id: string,
+  input: LicitacaoInternoInput
+): Promise<Licitacao> {
+  await buscarLicitacao(id);
+  return prisma.licitacao.update({
+    where: { id },
+    data: {
+      statusInterno: input.statusInterno,
+      valorProposta: input.valorProposta ?? null,
+      responsavel: input.responsavel ?? null,
+      observacoes: input.observacoes ?? null,
+    },
+  });
+}
+
+export async function excluirLicitacao(id: string): Promise<void> {
+  await buscarLicitacao(id);
+  await prisma.licitacao.delete({ where: { id } });
 }

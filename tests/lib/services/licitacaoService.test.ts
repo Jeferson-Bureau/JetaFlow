@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import * as pncp from "@/lib/external/pncp";
-import { cadastrarLicitacao, listarLicitacoes, buscarLicitacao } from "@/lib/services/licitacaoService";
+import {
+  cadastrarLicitacao, listarLicitacoes, buscarLicitacao,
+  atualizarDadosPNCP, atualizarDadosInternos, excluirLicitacao,
+} from "@/lib/services/licitacaoService";
+import type { LicitacaoInternoInput } from "@/lib/validators/licitacao";
 
 vi.mock("@/lib/external/pncp", async () => {
   const actual = await vi.importActual<typeof import("@/lib/external/pncp")>("@/lib/external/pncp");
@@ -81,5 +85,70 @@ describe("listarLicitacoes", () => {
 describe("buscarLicitacao", () => {
   it("throws NotFoundError for a missing licitacao", async () => {
     await expect(buscarLicitacao("id-inexistente")).rejects.toThrow("Não encontrado");
+  });
+});
+
+describe("atualizarDadosPNCP", () => {
+  it("refreshes the snapshot fields without touching internal fields", async () => {
+    vi.mocked(pncp.buscarContratacaoPNCP).mockResolvedValue(DADOS_PNCP_MOCK);
+    const criada = await cadastrarLicitacao("01612441000107-1-000131/2026");
+
+    vi.mocked(pncp.buscarContratacaoPNCP).mockResolvedValue({
+      ...DADOS_PNCP_MOCK,
+      situacaoCompraNome: "Encerrada",
+      valorTotalHomologado: 44000,
+    });
+
+    const atualizada = await atualizarDadosPNCP(criada.id);
+
+    expect(atualizada.situacaoCompraNome).toBe("Encerrada");
+    expect(atualizada.valorTotalHomologado).toBe(44000);
+    expect(atualizada.statusInterno).toBe("ANALISANDO");
+    expect(pncp.buscarContratacaoPNCP).toHaveBeenLastCalledWith("01612441000107", 2026, 131);
+  });
+
+  it("throws NotFoundError when the PNCP API no longer has the record", async () => {
+    vi.mocked(pncp.buscarContratacaoPNCP).mockResolvedValue(DADOS_PNCP_MOCK);
+    const criada = await cadastrarLicitacao("01612441000107-1-000131/2026");
+
+    vi.mocked(pncp.buscarContratacaoPNCP).mockResolvedValue(null);
+    await expect(atualizarDadosPNCP(criada.id)).rejects.toThrow("Licitação não encontrada no PNCP");
+  });
+});
+
+describe("atualizarDadosInternos", () => {
+  it("updates only the internal fields, leaving the PNCP snapshot untouched", async () => {
+    vi.mocked(pncp.buscarContratacaoPNCP).mockResolvedValue(DADOS_PNCP_MOCK);
+    const criada = await cadastrarLicitacao("01612441000107-1-000131/2026");
+
+    const input: LicitacaoInternoInput = {
+      statusInterno: "VAMOS_PARTICIPAR",
+      valorProposta: 45000,
+      responsavel: "Maria",
+      observacoes: "Cliente prioritário",
+    };
+    const atualizada = await atualizarDadosInternos(criada.id, input);
+
+    expect(atualizada.statusInterno).toBe("VAMOS_PARTICIPAR");
+    expect(atualizada.valorProposta).toBe(45000);
+    expect(atualizada.responsavel).toBe("Maria");
+    expect(atualizada.observacoes).toBe("Cliente prioritário");
+    expect(atualizada.orgaoNome).toBe(criada.orgaoNome);
+    expect(atualizada.situacaoCompraNome).toBe(criada.situacaoCompraNome);
+  });
+});
+
+describe("excluirLicitacao", () => {
+  it("deletes the licitacao", async () => {
+    vi.mocked(pncp.buscarContratacaoPNCP).mockResolvedValue(DADOS_PNCP_MOCK);
+    const criada = await cadastrarLicitacao("01612441000107-1-000131/2026");
+
+    await excluirLicitacao(criada.id);
+
+    await expect(buscarLicitacao(criada.id)).rejects.toThrow("Não encontrado");
+  });
+
+  it("throws NotFoundError when deleting a missing licitacao", async () => {
+    await expect(excluirLicitacao("id-inexistente")).rejects.toThrow("Não encontrado");
   });
 });
