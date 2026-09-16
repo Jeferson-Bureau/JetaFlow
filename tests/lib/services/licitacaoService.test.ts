@@ -68,6 +68,18 @@ describe("cadastrarLicitacao", () => {
       "Licitação não encontrada no PNCP"
     );
   });
+
+  it("normalizes whitespace so a padded numeroControlePNCP is treated as a duplicate", async () => {
+    vi.mocked(pncp.buscarContratacaoPNCP).mockResolvedValue(DADOS_PNCP_MOCK);
+    await cadastrarLicitacao("01612441000107-1-000131/2026");
+
+    await expect(
+      cadastrarLicitacao("  01612441000107-1-000131/2026  ")
+    ).rejects.toThrow("Esta licitação já está cadastrada");
+
+    const todas = await listarLicitacoes();
+    expect(todas).toHaveLength(1);
+  });
 });
 
 describe("listarLicitacoes", () => {

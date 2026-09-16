@@ -214,6 +214,7 @@ export default function LicitacaoDetalheClient({
             Valor da proposta
             <input
               type="number"
+              step="0.01"
               value={valorProposta}
               onChange={(e) => setValorProposta(e.target.value)}
               className="mt-1 w-full rounded border px-3 py-2"

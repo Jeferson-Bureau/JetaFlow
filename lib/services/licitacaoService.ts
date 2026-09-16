@@ -5,12 +5,13 @@ import type { LicitacaoInternoInput } from "@/lib/validators/licitacao";
 import type { Licitacao } from "@prisma/client";
 
 export async function cadastrarLicitacao(numeroControlePNCP: string): Promise<Licitacao> {
-  const parseado = parseNumeroControlePNCP(numeroControlePNCP);
+  const numero = numeroControlePNCP.trim();
+  const parseado = parseNumeroControlePNCP(numero);
   if (!parseado) {
     throw new ForbiddenError("Número de Controle PNCP em formato inválido");
   }
 
-  const existente = await prisma.licitacao.findUnique({ where: { numeroControlePNCP } });
+  const existente = await prisma.licitacao.findUnique({ where: { numeroControlePNCP: numero } });
   if (existente) {
     throw new ForbiddenError("Esta licitação já está cadastrada");
   }
@@ -22,7 +23,7 @@ export async function cadastrarLicitacao(numeroControlePNCP: string): Promise<Li
 
   return prisma.licitacao.create({
     data: {
-      numeroControlePNCP,
+      numeroControlePNCP: numero,
       cnpjOrgao: parseado.cnpj,
       anoCompra: parseado.ano,
       sequencialCompra: parseado.sequencial,
