@@ -14,6 +14,7 @@ interface SubstratoOpcao {
   id: string;
   nome: string;
   tipo: string;
+  unidadeMedida: string;
   custoUnitario: number;
   percentualPerda: number;
   markup: number;
@@ -47,6 +48,7 @@ function itemVazio(margemPadrao: number): OrcamentoItemValues {
     chapaQuantidade: null,
     tintaId: null,
     tintaQuantidade: null,
+    substratoFolhas: null,
     acabamentoDescricao: "",
     acabamentoCusto: 0,
     margemLucro: margemPadrao,

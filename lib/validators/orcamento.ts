@@ -13,6 +13,7 @@ export const orcamentoItemInputSchema = z
     chapaQuantidade: z.number().positive().nullable().optional(),
     tintaId: z.string().nullable().optional(),
     tintaQuantidade: z.number().positive().nullable().optional(),
+    substratoFolhas: z.number().positive().nullable().optional(),
     acabamentoDescricao: z.string().nullable().optional(),
     acabamentoCusto: z.number().min(0).default(0),
     margemLucro: z.number().min(0),

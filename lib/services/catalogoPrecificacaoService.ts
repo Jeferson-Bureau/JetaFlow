@@ -7,6 +7,7 @@ export async function listSubstratosComCusto() {
     select: {
       id: true,
       nome: true,
+      unidadeMedida: true,
       custoUnitario: true,
       percentualPerda: true,
       markup: true,

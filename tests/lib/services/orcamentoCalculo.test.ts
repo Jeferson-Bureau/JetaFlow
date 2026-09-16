@@ -74,4 +74,27 @@ describe("calcularItem", () => {
       calcularItem({ ...baseInput, equipamento: { ...equipamento, velocidade: 0 } })
     ).toThrow("Velocidade do equipamento deve ser maior que zero");
   });
+
+  describe("substrato com unidadeMedida folha", () => {
+    const substratoFolha = { custoUnitario: 2, percentualPerda: 10, markup: 50, unidadeMedida: "folha" };
+
+    it("prices by substratoFolhas instead of area", () => {
+      const resultado = calcularItem({ ...baseInput, substrato: substratoFolha, substratoFolhas: 20 });
+      // custoSubstrato = 20 * 2 * 1.10 * 1.50 = 66 (em vez de área*tiragem*custoUnitario)
+      expect(resultado.custoCalculado).toBeCloseTo(166.1, 5);
+      expect(resultado.precoFinal).toBeCloseTo(207.625, 5);
+    });
+
+    it("rejects a folha substrato with no substratoFolhas", () => {
+      expect(() =>
+        calcularItem({ ...baseInput, substrato: substratoFolha, substratoFolhas: null })
+      ).toThrow("Quantidade de folhas obrigatória para papel");
+    });
+
+    it("rejects a folha substrato with substratoFolhas <= 0", () => {
+      expect(() =>
+        calcularItem({ ...baseInput, substrato: substratoFolha, substratoFolhas: 0 })
+      ).toThrow("Quantidade de folhas obrigatória para papel");
+    });
+  });
 });

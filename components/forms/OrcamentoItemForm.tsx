@@ -16,6 +16,7 @@ export interface OrcamentoItemValues {
   chapaQuantidade: number | null;
   tintaId: string | null;
   tintaQuantidade: number | null;
+  substratoFolhas: number | null;
   acabamentoDescricao: string;
   acabamentoCusto: number;
   margemLucro: number;
@@ -24,6 +25,7 @@ export interface OrcamentoItemValues {
 interface SubstratoOpcao {
   id: string;
   nome: string;
+  unidadeMedida: string;
   custoUnitario: number;
   percentualPerda: number;
   markup: number;
@@ -72,6 +74,7 @@ function calcularPreview(
     chapaQuantidade: value.chapaQuantidade,
     tinta,
     tintaQuantidade: value.tintaQuantidade,
+    substratoFolhas: value.substratoFolhas,
     acabamentoCusto: value.acabamentoCusto,
     margemLucro: value.margemLucro,
     parametros,
@@ -93,6 +96,8 @@ export default function OrcamentoItemForm({
   parametros,
 }: OrcamentoItemFormProps) {
   const preview = calcularPreview(value, substratos, equipamentos, parametros);
+  const substratoSelecionado = substratos.find((s) => s.id === value.substratoId);
+  const substratoPorFolha = substratoSelecionado?.unidadeMedida === "folha";
   const sugestoesAproveitamento =
     value.tipo === "OFFSET" && value.larguraCm > 0 && value.alturaCm > 0 && value.tiragem > 0
       ? sugerirAproveitamento(value.larguraCm, value.alturaCm, value.tiragem)
@@ -139,12 +144,22 @@ export default function OrcamentoItemForm({
 
         <Combobox
           items={substratos}
-          value={substratos.find((s) => s.id === value.substratoId) ?? null}
+          value={substratoSelecionado ?? null}
           onChange={(s) => set("substratoId", s.id)}
           getLabel={(s) => s.nome}
           placeholder="Substrato"
         />
       </div>
+
+      {substratoPorFolha && (
+        <input
+          type="number"
+          placeholder="Quantidade de folhas"
+          value={value.substratoFolhas ?? ""}
+          onChange={(e) => set("substratoFolhas", e.target.value === "" ? null : Number(e.target.value))}
+          className="w-full rounded border px-3 py-2"
+        />
+      )}
 
       <div className="grid grid-cols-3 gap-3">
         <input

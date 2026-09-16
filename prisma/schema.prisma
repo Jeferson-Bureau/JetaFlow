@@ -161,6 +161,7 @@ model OrcamentoItem {
   tintaId             String?
   tinta               Substrato?  @relation("OrcamentoItemTinta", fields: [tintaId], references: [id], onDelete: SetNull)
   tintaQuantidade     Float?
+  substratoFolhas     Float?
   acabamentoDescricao String?
   acabamentoCusto     Float       @default(0)
   margemLucro         Float

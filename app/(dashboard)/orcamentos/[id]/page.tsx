@@ -45,6 +45,7 @@ export default async function OrcamentoDetalhePage(props: { params: Promise<{ id
             chapaQuantidade: item.chapaQuantidade,
             tintaId: item.tintaId,
             tintaQuantidade: item.tintaQuantidade,
+            substratoFolhas: item.substratoFolhas,
             acabamentoDescricao: item.acabamentoDescricao ?? "",
             acabamentoCusto: item.acabamentoCusto,
             margemLucro: item.margemLucro,

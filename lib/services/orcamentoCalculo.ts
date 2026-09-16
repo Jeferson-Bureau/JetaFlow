@@ -2,6 +2,7 @@ export interface SubstratoParaCalculo {
   custoUnitario: number;
   percentualPerda: number;
   markup: number;
+  unidadeMedida?: string;
 }
 
 export interface EquipamentoParaCalculo {
@@ -27,6 +28,7 @@ export interface ItemCalculoInput {
   chapaQuantidade?: number | null;
   tinta?: SubstratoParaCalculo | null;
   tintaQuantidade?: number | null;
+  substratoFolhas?: number | null;
   acabamentoCusto: number;
   margemLucro: number;
   parametros: ParametrosParaCalculo;
@@ -48,10 +50,14 @@ export function calcularItem(input: ItemCalculoInput): ItemCalculoResultado {
     throw new Error("Item DIGITAL não pode ter chapa ou tinta");
   }
 
+  const substratoPorFolha = input.substrato.unidadeMedida === "folha";
+  if (substratoPorFolha && !(input.substratoFolhas && input.substratoFolhas > 0)) {
+    throw new Error("Quantidade de folhas obrigatória para papel");
+  }
+
   const areaM2 = (input.larguraCm / 100) * (input.alturaCm / 100);
   const custoSubstrato =
-    areaM2 *
-    input.tiragem *
+    (substratoPorFolha ? input.substratoFolhas! : areaM2 * input.tiragem) *
     input.substrato.custoUnitario *
     (1 + input.substrato.percentualPerda / 100) *
     (1 + input.substrato.markup / 100);
