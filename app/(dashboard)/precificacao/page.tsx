@@ -9,6 +9,7 @@ interface Substrato {
   tipo: string;
   unidadeMedida: string;
   custoUnitario?: number;
+  atributos: Record<string, string | number>;
   ativo: boolean;
 }
 interface Equipamento { id: string; nome: string; tipo: string; formatoMaximo: string; ativo: boolean; }
@@ -36,6 +37,8 @@ export default function PrecificacaoPage() {
           <tr className="border-b">
             <th className="py-2">Nome</th>
             <th className="py-2">Tipo</th>
+            <th className="py-2">Gramatura</th>
+            <th className="py-2">Formato</th>
             <th className="py-2">Unidade</th>
             <th className="py-2">Valor</th>
             <th className="py-2">Status</th>
@@ -46,6 +49,8 @@ export default function PrecificacaoPage() {
             <tr key={s.id} className="border-b hover:bg-gray-50">
               <td className="py-2"><Link href={`/precificacao/substratos/${s.id}`}>{s.nome}</Link></td>
               <td className="py-2">{s.tipo}</td>
+              <td className="py-2">{s.atributos?.gramatura ?? "—"}</td>
+              <td className="py-2">{s.atributos?.formato ?? "—"}</td>
               <td className="py-2">{s.unidadeMedida}</td>
               <td className="py-2">
                 {s.custoUnitario != null ? `R$ ${s.custoUnitario.toFixed(2)} / ${s.unidadeMedida}` : "—"}
