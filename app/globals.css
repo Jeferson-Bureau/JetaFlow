@@ -22,3 +22,9 @@ body {
   background-color: var(--bg);
   color: var(--text);
 }
+
+input,
+select,
+textarea {
+  background-color: var(--bg);
+}
