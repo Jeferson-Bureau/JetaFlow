@@ -209,6 +209,13 @@ model Volume {
   conferidoEm   DateTime?
 }
 
+model EtiquetaAvulsa {
+  id         String   @id @default(cuid())
+  descricao  String
+  quantidade Int
+  createdAt  DateTime @default(now())
+}
+
 model Licitacao {
   id                       String    @id @default(cuid())
   numeroControlePNCP       String    @unique
