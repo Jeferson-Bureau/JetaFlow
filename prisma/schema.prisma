@@ -22,6 +22,7 @@ model Cliente {
   id             String      @id @default(cuid())
   tipo           String
   nome           String
+  nomeFantasia   String?
   documento      String      @unique
   ie             String?
   telefone       String?
@@ -41,23 +42,24 @@ model Cliente {
 }
 
 model Fornecedor {
-  id          String      @id @default(cuid())
-  razaoSocial String
-  cnpj        String      @unique
-  contato     String?
-  telefone    String?
-  email       String?
-  cep         String?
-  endereco    String?
-  numero      String?
-  complemento String?
-  bairro      String?
-  cidade      String?
-  uf          String?
-  categoria   String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  substratos  Substrato[]
+  id           String      @id @default(cuid())
+  razaoSocial  String
+  nomeFantasia String?
+  cnpj         String      @unique
+  contato      String?
+  telefone     String?
+  email        String?
+  cep          String?
+  endereco     String?
+  numero       String?
+  complemento  String?
+  bairro       String?
+  cidade       String?
+  uf           String?
+  categoria    String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  substratos   Substrato[]
 }
 
 model Substrato {

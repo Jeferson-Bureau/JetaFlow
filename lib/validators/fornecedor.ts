@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const fornecedorSchema = z.object({
   razaoSocial: z.string().min(1, "Razão social obrigatória"),
+  nomeFantasia: z.string().optional(),
   cnpj: z.string().min(11, "CNPJ inválido"),
   contato: z.string().optional(),
   telefone: z.string().optional(),

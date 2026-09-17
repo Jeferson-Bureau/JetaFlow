@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export interface FornecedorFormValues {
   id?: string;
   razaoSocial: string;
+  nomeFantasia: string;
   cnpj: string;
   contato: string;
   telefone: string;
@@ -21,7 +22,7 @@ export interface FornecedorFormValues {
 }
 
 const empty: FornecedorFormValues = {
-  razaoSocial: "", cnpj: "", contato: "", telefone: "", email: "", cep: "",
+  razaoSocial: "", nomeFantasia: "", cnpj: "", contato: "", telefone: "", email: "", cep: "",
   endereco: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", categoria: "",
 };
 
@@ -40,7 +41,8 @@ export default function FornecedorForm({ initial }: { initial?: FornecedorFormVa
     if (!response.ok) return;
     const data = await response.json();
     setValues((v) => ({
-      ...v, razaoSocial: v.razaoSocial || data.razaoSocial, cep: data.cep, endereco: data.endereco,
+      ...v, razaoSocial: v.razaoSocial || data.razaoSocial, nomeFantasia: v.nomeFantasia || data.nomeFantasia || "",
+      cep: data.cep, endereco: data.endereco,
       numero: data.numero, bairro: data.bairro, cidade: data.cidade, uf: data.uf,
     }));
   }
@@ -73,6 +75,7 @@ export default function FornecedorForm({ initial }: { initial?: FornecedorFormVa
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
       <input placeholder="CNPJ" value={values.cnpj} onChange={(e) => set("cnpj", e.target.value)} onBlur={handleCnpjBlur} className="w-full rounded border px-3 py-2" required />
       <input placeholder="Razão social" value={values.razaoSocial} onChange={(e) => set("razaoSocial", e.target.value)} className="w-full rounded border px-3 py-2" required />
+      <input placeholder="Nome Fantasia" value={values.nomeFantasia} onChange={(e) => set("nomeFantasia", e.target.value)} className="w-full rounded border px-3 py-2" />
       <div className="grid grid-cols-2 gap-4">
         <input placeholder="Contato" value={values.contato} onChange={(e) => set("contato", e.target.value)} className="rounded border px-3 py-2" />
         <input placeholder="Telefone" value={values.telefone} onChange={(e) => set("telefone", e.target.value)} className="rounded border px-3 py-2" />

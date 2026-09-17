@@ -7,6 +7,7 @@ export interface ClienteFormValues {
   id?: string;
   tipo: "PF" | "PJ";
   nome: string;
+  nomeFantasia: string;
   documento: string;
   ie: string;
   telefone: string;
@@ -23,7 +24,7 @@ export interface ClienteFormValues {
 }
 
 const empty: ClienteFormValues = {
-  tipo: "PJ", nome: "", documento: "", ie: "", telefone: "", email: "",
+  tipo: "PJ", nome: "", nomeFantasia: "", documento: "", ie: "", telefone: "", email: "",
   cep: "", endereco: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "",
   prazoPagamento: "", observacoes: "",
 };
@@ -43,7 +44,8 @@ export default function ClienteForm({ initial }: { initial?: ClienteFormValues }
     if (!response.ok) return;
     const data = await response.json();
     setValues((v) => ({
-      ...v, nome: v.nome || data.razaoSocial, cep: data.cep, endereco: data.endereco,
+      ...v, nome: v.nome || data.razaoSocial, nomeFantasia: v.nomeFantasia || data.nomeFantasia || "",
+      cep: data.cep, endereco: data.endereco,
       numero: data.numero, bairro: data.bairro, cidade: data.cidade, uf: data.uf,
     }));
   }
@@ -90,6 +92,7 @@ export default function ClienteForm({ initial }: { initial?: ClienteFormValues }
         />
       </div>
       <input placeholder="Nome / Razão Social" value={values.nome} onChange={(e) => set("nome", e.target.value)} className="w-full rounded border px-3 py-2" required />
+      <input placeholder="Nome Fantasia" value={values.nomeFantasia} onChange={(e) => set("nomeFantasia", e.target.value)} className="w-full rounded border px-3 py-2" />
       <div className="grid grid-cols-2 gap-4">
         <input placeholder="IE" value={values.ie} onChange={(e) => set("ie", e.target.value)} className="rounded border px-3 py-2" />
         <input placeholder="Telefone/WhatsApp" value={values.telefone} onChange={(e) => set("telefone", e.target.value)} className="rounded border px-3 py-2" />

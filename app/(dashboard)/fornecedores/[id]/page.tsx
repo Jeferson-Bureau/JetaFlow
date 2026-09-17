@@ -12,7 +12,8 @@ export default async function EditarFornecedorPage(props: { params: Promise<{ id
       <h1 className="mb-4 text-2xl font-semibold text-marinho">Editar fornecedor</h1>
       <FornecedorForm
         initial={{
-          id: fornecedor.id, razaoSocial: fornecedor.razaoSocial, cnpj: fornecedor.cnpj,
+          id: fornecedor.id, razaoSocial: fornecedor.razaoSocial,
+          nomeFantasia: fornecedor.nomeFantasia ?? "", cnpj: fornecedor.cnpj,
           contato: fornecedor.contato ?? "", telefone: fornecedor.telefone ?? "", email: fornecedor.email ?? "",
           cep: fornecedor.cep ?? "", endereco: fornecedor.endereco ?? "", numero: fornecedor.numero ?? "",
           complemento: fornecedor.complemento ?? "", bairro: fornecedor.bairro ?? "", cidade: fornecedor.cidade ?? "",

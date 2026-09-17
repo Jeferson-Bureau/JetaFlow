@@ -10,13 +10,14 @@ describe("lookupCnpj", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        razao_social: "JETAPRINT LTDA", cep: "12345000", logradouro: "Rua A",
+        razao_social: "JETAPRINT LTDA", nome_fantasia: "JetaPrint", cep: "12345000", logradouro: "Rua A",
         numero: "100", bairro: "Centro", municipio: "São Paulo", uf: "SP",
       }),
     }));
 
     const result = await lookupCnpj("12.345.678/0001-99");
     expect(result?.razaoSocial).toBe("JETAPRINT LTDA");
+    expect(result?.nomeFantasia).toBe("JetaPrint");
     expect(result?.uf).toBe("SP");
   });
 

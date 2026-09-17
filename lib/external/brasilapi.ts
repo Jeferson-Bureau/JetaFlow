@@ -1,5 +1,6 @@
 export interface CnpjResult {
   razaoSocial: string;
+  nomeFantasia: string;
   cep: string;
   endereco: string;
   numero: string;
@@ -18,6 +19,7 @@ export async function lookupCnpj(cnpj: string): Promise<CnpjResult | null> {
     const data = await response.json();
     return {
       razaoSocial: data.razao_social ?? "",
+      nomeFantasia: data.nome_fantasia ?? "",
       cep: data.cep ?? "",
       endereco: data.logradouro ?? "",
       numero: data.numero ?? "",
