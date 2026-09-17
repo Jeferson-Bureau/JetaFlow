@@ -30,3 +30,6 @@ Thumbs.db
 
 # Uploaded files
 public/uploads/
+
+# Impeccable local session cache (per-machine, not project state)
+.impeccable/hook.cache.json

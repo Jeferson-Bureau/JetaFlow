@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-17T00:00:00.000Z",
+  "title": "Design System: JetaFlow",
+  "extensions": {
+    "colorMeta": {
+      "marinho": { "role": "neutral", "displayName": "Azul-Marinho Corporativo", "canonical": "#1B3A66" },
+      "ciano": { "role": "primary", "displayName": "Ciano Operacional", "canonical": "#229DCF" },
+      "amarelo": { "role": "tertiary", "displayName": "Amarelo Alerta", "canonical": "#FBC64B" },
+      "rosa": { "role": "secondary", "displayName": "Rosa Ação", "canonical": "#E23D7D" },
+      "neutral-bg": { "role": "neutral", "displayName": "Branco", "canonical": "#FFFFFF" },
+      "neutral-bg-dark": { "role": "neutral", "displayName": "Azul-Marinho Escuro (modo escuro)", "canonical": "#0F1E33" },
+      "neutral-hover-row": { "role": "neutral", "displayName": "Cinza Linha Hover", "canonical": "#F9FAFB" },
+      "neutral-readonly": { "role": "neutral", "displayName": "Cinza Campo Somente-Leitura", "canonical": "#F3F4F6" },
+      "neutral-muted-text": { "role": "neutral", "displayName": "Cinza Texto Secundário", "canonical": "#6B7280" },
+      "neutral-badge": { "role": "neutral", "displayName": "Cinza Neutro de Badge", "canonical": "#9CA3AF" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Número de destaque nos cards de KPI do Painel." },
+      "headline": { "displayName": "Headline", "purpose": "Título de página (h1)." },
+      "title": { "displayName": "Title", "purpose": "Título de tela isolada (ex.: login)." },
+      "body": { "displayName": "Body", "purpose": "Texto padrão de tabelas, formulários e parágrafos." },
+      "label": { "displayName": "Label", "purpose": "Texto de badges de status e rótulos pequenos." }
+    },
+    "shadows": [],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão Primário",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação principal de um formulário ou lista (Salvar, Novo cliente, Entrar).",
+      "html": "<button class=\"ds-btn-primary\">Salvar</button>",
+      "css": ".ds-btn-primary { background: #229DCF; color: #FFFFFF; padding: 8px 16px; border-radius: 4px; border: none; font-size: 1rem; }"
+    },
+    {
+      "name": "Campo de Texto",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Input de texto padrão usado em todos os formulários.",
+      "html": "<input class=\"ds-input\" placeholder=\"Nome / Razão Social\" />",
+      "css": ".ds-input { background: #FFFFFF; color: #1B3A66; border: 1px solid currentColor; border-radius: 4px; padding: 8px 12px; font-size: 1rem; } .ds-input:disabled { background: #F3F4F6; }"
+    },
+    {
+      "name": "Badge de Status (Positivo)",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Status positivo/ação — ex.: OS no prazo, licitação em andamento favorável.",
+      "html": "<span class=\"ds-badge ds-badge--ciano\">Vamos participar</span>",
+      "css": ".ds-badge { display: inline-block; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: 500; color: #FFFFFF; } .ds-badge--ciano { background: #229DCF; }"
+    },
+    {
+      "name": "Badge de Status (Alerta)",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Status de alerta/perigo — ex.: OS atrasada, licitação perdida.",
+      "html": "<span class=\"ds-badge ds-badge--rosa\">Atrasada</span>",
+      "css": ".ds-badge--rosa { background: #E23D7D; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: 500; color: #FFFFFF; display: inline-block; }"
+    },
+    {
+      "name": "Card de KPI",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Cartão de indicador numérico do Painel.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-label\">Orçamentos pendentes</p><p class=\"ds-card-value\">12</p></div>",
+      "css": ".ds-card { background: #FFFFFF; border: 1px solid currentColor; border-radius: 8px; padding: 16px; } .ds-card-label { font-size: 0.875rem; color: #6B7280; margin: 0; } .ds-card-value { font-size: 1.875rem; font-weight: 700; color: #229DCF; margin: 0; }"
+    },
+    {
+      "name": "Item de Navegação Lateral",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Link de módulo dentro da barra lateral fixa.",
+      "html": "<a class=\"ds-nav-item\">Orçamentos</a>",
+      "css": ".ds-nav-item { display: block; border-radius: 4px; padding: 8px 12px; color: #FFFFFF; text-decoration: none; } .ds-nav-item:hover { background: #229DCF; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Painel de Controle da Gráfica",
+    "overview": "JetaFlow é um ERP interno de uma única gráfica (JETAPRINT), usado por 1-3 pessoas todo dia para orçar, produzir e expedir. Não existe visitante a convencer — existe operador com uma tarefa e pouco tempo. A linguagem visual reflete isso deliberadamente: sem sombras, sem tipografia decorativa, sem imagens de marca — tabelas, formulários e badges de status lidos rapidamente, com a paleta da JETAPRINT usada como sinalização (cor = significado: ciano = ação/positivo, rosa = alerta/perigo, amarelo = atenção intermediária), não como decoração. A tipografia é a stack sans-serif padrão do sistema operacional (nenhuma fonte customizada carregada) — reforça o caráter de ferramenta interna, não de produto vitrine. Cantos levemente arredondados (4px em controles, 8px em cartões/paineis) suavizam sem amaciar; o sistema nunca usa rounded-full ou geometria decorativa.",
+    "keyCharacteristics": [
+      "Flat by design — sem elevação, sem sombra, sem glassmorphism.",
+      "Cor com significado, não decoração — os 3 acentos (ciano/amarelo/rosa) carregam estado (positivo/atenção/alerta), o azul-marinho é reservado a texto e navegação.",
+      "Densidade alta e neutra — tabelas e formulários compactos (px-3 py-2), sem espaço vazio decorativo.",
+      "Bordas herdam a cor do texto ambiente (ver Named Rule em Shapes) em vez de usar uma paleta de cinza dedicada — resultado direto de nunca sobrescrever borderColor no Tailwind."
+    ],
+    "rules": [
+      { "name": "The Signal Color Rule", "body": "Ciano, amarelo e rosa nunca aparecem juntos como decoração — cada um mapeia a exatamente um significado de status (positivo / atenção / alerta). Uma nova cor de acento não deve ser introduzida sem um significado de status novo e explícito.", "section": "colors" },
+      { "name": "The Flat-by-Design Rule", "body": "Superfícies não recebem sombra em nenhum estado (repouso, hover, foco). A única exceção tolerada é um menu flutuante que precisa se destacar do conteúdo por trás dele (dropdown do Combobox).", "section": "elevation" },
+      { "name": "The Ambient Border Rule", "body": "O projeto nunca sobrescreve borderColor no Tailwind, então a classe border (sem sufixo de cor) herda currentColor — a borda assume a cor de texto do contexto em que está. Uma nova tela que queira uma borda cinza neutra precisa aplicar border-gray-* explicitamente.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do usar cor como sinalização de status (The Signal Color Rule) — ciano para positivo/ação, amarelo para atenção intermediária, rosa para alerta/perigo.",
+      "Do manter o sistema flat (The Flat-by-Design Rule) — não introduzir box-shadow em cards, botões ou inputs.",
+      "Do aplicar border-gray-* explicitamente quando uma borda neutra cinza for realmente pretendida (The Ambient Border Rule) — não confiar em border sozinho para isso.",
+      "Do manter a densidade compacta (px-3 py-2 em inputs, space-y-4 em formulários) — este não é um produto que precisa de respiro visual generoso."
+    ],
+    "donts": [
+      "Don't introduzir uma fonte customizada ou tipografia decorativa — a stack do sistema operacional é intencional aqui.",
+      "Don't adicionar rounded-full ou geometria decorativa a botões, cards ou badges — a linguagem de forma do sistema é 4px/8px, ponto.",
+      "Don't tratar a ausência de estado hover/focus nos botões e a ausência de item \"ativo\" na Sidebar como comportamento confirmado — são lacunas reais do build atual.",
+      "Don't presumir que uma nova tela herda modo escuro automaticamente só por usar as cores de marca — hoje essas classes não têm par dark:, então uma tela nova em modo escuro vai destoar do body a menos que isso seja tratado explicitamente."
+    ]
+  }
+}
