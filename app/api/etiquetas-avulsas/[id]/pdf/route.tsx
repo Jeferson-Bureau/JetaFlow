@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import QRCode from "qrcode";
+
 import { getSessionRole } from "@/lib/permissions";
 import { handleApiError } from "@/lib/api-helpers";
 import { buscarEtiquetaAvulsa } from "@/lib/services/etiquetaAvulsaService";
@@ -16,11 +16,10 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
     const codigos = Array.from({ length: etiqueta.quantidade }, (_, i) =>
       gerarCodigoEtiquetaAvulsa(etiqueta.id, i + 1)
     );
-    const qrDataUris = await Promise.all(codigos.map((codigo) => QRCode.toDataURL(codigo)));
 
     const buffer = await renderPdfInWorker({
       type: "etiquetaAvulsa",
-      props: { descricao: etiqueta.descricao, codigos, qrDataUris },
+      props: { descricao: etiqueta.descricao, codigos, emitidoEm: etiqueta.createdAt.toISOString() },
     });
 
     return new NextResponse(buffer, {

@@ -6,8 +6,8 @@ import type { OrcamentoPdfDocument } from "./orcamentoPdf";
 import type { EtiquetaAvulsaPdfDocument } from "./etiquetaAvulsaPdf";
 
 // See pdfWorker.tsx for why this runs out-of-process. Props round-trip
-// through JSON (Date fields arrive as strings in the worker), which is
-// fine here since none of the PDF documents read date fields.
+// through JSON (Date fields arrive as strings in the worker); EtiquetaAvulsa
+// passes emitidoEm as an ISO string to avoid the Date → string coercion issue.
 export type PdfWorkerJob =
   | { type: "etiqueta"; props: ComponentProps<typeof EtiquetaPdfDocument> }
   | { type: "orcamento"; props: ComponentProps<typeof OrcamentoPdfDocument> }
