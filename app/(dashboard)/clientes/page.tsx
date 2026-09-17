@@ -21,12 +21,12 @@ export default function ClientesPage() {
       </div>
       <input placeholder="Buscar por nome ou documento..." value={search} onChange={(e) => setSearch(e.target.value)} className="mb-4 w-full max-w-md rounded border px-3 py-2" />
       <table className="w-full text-left">
-        <thead><tr className="border-b"><th className="py-2">Nome</th><th className="py-2">Nome Fantasia</th><th className="py-2">Documento</th><th className="py-2">Telefone</th></tr></thead>
+        <thead><tr className="border-b"><th className="py-2">Nome Fantasia</th><th className="py-2">Nome</th><th className="py-2">Documento</th><th className="py-2">Telefone</th></tr></thead>
         <tbody>
           {clientes.map((c) => (
             <tr key={c.id} className="border-b hover:bg-gray-50">
-              <td className="py-2"><Link href={`/clientes/${c.id}`}>{c.nome}</Link></td>
               <td className="py-2">{c.nomeFantasia}</td>
+              <td className="py-2"><Link href={`/clientes/${c.id}`}>{c.nome}</Link></td>
               <td className="py-2">{c.documento}</td>
               <td className="py-2">{c.telefone}</td>
             </tr>
