@@ -17,6 +17,8 @@ export const expedicaoInputSchema = z.object({
   bairro: z.string().nullable().optional(),
   cidade: z.string().nullable().optional(),
   uf: z.string().nullable().optional(),
+  notaFiscal: z.string().nullable().optional(),
+  observacoes: z.string().nullable().optional(),
 });
 
 export type ExpedicaoInput = z.infer<typeof expedicaoInputSchema>;

@@ -14,11 +14,15 @@ const styles = StyleSheet.create({
     marginBottom: 10, padding: 6, borderWidth: 1, borderColor: "#1B3A66", borderStyle: "solid",
   },
   quantidadeDestaque: { fontSize: 14, fontWeight: 700, color: "#1B3A66" },
-  quantidadeTotal: { fontSize: 9, marginBottom: 10, color: "#555555" },
+  quantidadeTotal: { fontSize: 9, marginBottom: 4, color: "#555555" },
+  notaFiscal: { fontSize: 9, marginBottom: 10, color: "#555555" },
   codigo: { fontSize: 10, marginBottom: 8, color: "#000000" },
   qr: { width: 90, height: 90 },
   alerta: {
     marginTop: 10, padding: 6, fontSize: 9, fontWeight: 700, color: "#FFFFFF", backgroundColor: "#E63946",
+  },
+  observacoes: {
+    marginTop: 10, padding: 6, fontSize: 8, color: "#000000", borderWidth: 1, borderColor: "#dddddd", borderStyle: "solid",
   },
 });
 
@@ -64,12 +68,18 @@ export function EtiquetaPdfDocument({
           <Text style={styles.quantidadeTotal}>
             QUANTIDADE TOTAL DO PEDIDO: {quantidadeTotalPedido}
           </Text>
+          <Text style={styles.notaFiscal}>
+            NOTA FISCAL: {expedicao.notaFiscal ?? "NÃO INFORMADA"}
+          </Text>
           <Text style={styles.codigo}>{volume.codigoInterno}</Text>
           <Image style={styles.qr} src={qrDataUris[i]} />
           {divergente && (
             <Text style={styles.alerta}>
               ATENÇÃO: A SOMA DOS VOLUMES NÃO CONFERE COM A QUANTIDADE TOTAL DO PEDIDO
             </Text>
+          )}
+          {expedicao.observacoes && (
+            <Text style={styles.observacoes}>OBSERVAÇÕES: {expedicao.observacoes}</Text>
           )}
         </Page>
       ))}

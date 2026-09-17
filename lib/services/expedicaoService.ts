@@ -30,6 +30,8 @@ export async function gerarExpedicao(
     bairro: input.bairro ?? null,
     cidade: input.cidade ?? null,
     uf: input.uf ?? null,
+    notaFiscal: input.notaFiscal ?? null,
+    observacoes: input.observacoes ?? null,
   };
 
   return prisma.$transaction(async (tx) => {

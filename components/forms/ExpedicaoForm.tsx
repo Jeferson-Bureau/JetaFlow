@@ -17,6 +17,8 @@ export interface ExpedicaoFormValues {
   bairro: string;
   cidade: string;
   uf: string;
+  notaFiscal: string;
+  observacoes: string;
 }
 
 export interface ItemDoOrcamento {
@@ -157,6 +159,20 @@ export default function ExpedicaoForm({ value, onChange, itens }: ExpedicaoFormP
           maxLength={2}
         />
       </div>
+
+      <input
+        type="text"
+        placeholder="Número da nota fiscal (se houver)"
+        value={value.notaFiscal}
+        onChange={(e) => set("notaFiscal", e.target.value)}
+        className="w-full rounded border px-3 py-2"
+      />
+      <textarea
+        placeholder="Observações (opcional)"
+        value={value.observacoes}
+        onChange={(e) => set("observacoes", e.target.value)}
+        className="w-full rounded border px-3 py-2"
+      />
     </div>
   );
 }

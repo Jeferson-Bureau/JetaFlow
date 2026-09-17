@@ -76,6 +76,26 @@ describe("expedicaoService", () => {
     expect(expedicao.uf).toBe("PR");
   });
 
+  it("stores an optional nota fiscal and observações on the expedicao", async () => {
+    const os = await seedOS();
+    const expedicao = await gerarExpedicao(os.id, {
+      volumes: volumes(1),
+      notaFiscal: "NF-12345",
+      observacoes: "Entregar somente em horário comercial",
+    });
+
+    expect(expedicao.notaFiscal).toBe("NF-12345");
+    expect(expedicao.observacoes).toBe("Entregar somente em horário comercial");
+  });
+
+  it("defaults nota fiscal and observações to null when omitted", async () => {
+    const os = await seedOS();
+    const expedicao = await gerarExpedicao(os.id, { volumes: volumes(1) });
+
+    expect(expedicao.notaFiscal).toBeNull();
+    expect(expedicao.observacoes).toBeNull();
+  });
+
   it("links a volume to an orcamentoItem when informed", async () => {
     const os = await seedOS();
     const ordem = await prisma.ordemServico.findUniqueOrThrow({

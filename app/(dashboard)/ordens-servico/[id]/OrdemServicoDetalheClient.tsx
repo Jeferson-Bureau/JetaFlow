@@ -33,6 +33,8 @@ interface ExpedicaoResumo {
   bairro: string;
   cidade: string;
   uf: string;
+  notaFiscal: string;
+  observacoes: string;
   volumes: VolumeResumo[];
 }
 
@@ -46,7 +48,7 @@ interface OrdemServicoDetalheClientProps {
   clienteNome: string;
   itens: ItemResumo[];
   total: number;
-  clienteEndereco: Omit<ExpedicaoResumo, "id" | "volumes">;
+  clienteEndereco: Omit<ExpedicaoResumo, "id" | "volumes" | "notaFiscal" | "observacoes">;
   expedicao: ExpedicaoResumo | null;
 }
 
@@ -86,12 +88,16 @@ export default function OrdemServicoDetalheClient({
           bairro: expedicao.bairro,
           cidade: expedicao.cidade,
           uf: expedicao.uf,
+          notaFiscal: expedicao.notaFiscal,
+          observacoes: expedicao.observacoes,
         }
       : {
           volumes: itens.length
             ? itens.map((item) => ({ orcamentoItemId: item.id, quantidade: item.tiragem }))
             : [{ orcamentoItemId: "", quantidade: 1 }],
           ...clienteEndereco,
+          notaFiscal: "",
+          observacoes: "",
         }
   );
   const progresso = calcularProgressoConferencia(expedicao?.volumes ?? []);

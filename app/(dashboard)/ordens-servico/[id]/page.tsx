@@ -62,6 +62,8 @@ export default async function OrdemServicoDetalhePage(props: { params: Promise<{
               bairro: expedicao.bairro ?? "",
               cidade: expedicao.cidade ?? "",
               uf: expedicao.uf ?? "",
+              notaFiscal: expedicao.notaFiscal ?? "",
+              observacoes: expedicao.observacoes ?? "",
               volumes: expedicao.volumes.map((v) => ({
                 id: v.id,
                 numero: v.numero,

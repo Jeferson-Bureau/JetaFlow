@@ -229,6 +229,8 @@ model Expedicao {
   bairro         String?
   cidade         String?
   uf             String?
+  notaFiscal     String?
+  observacoes    String?
   createdAt      DateTime     @default(now())
   volumes        Volume[]
 }
