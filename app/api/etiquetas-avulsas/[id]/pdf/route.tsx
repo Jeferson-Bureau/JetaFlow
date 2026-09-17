@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { getSessionRole } from "@/lib/permissions";
 import { handleApiError } from "@/lib/api-helpers";
 import { buscarEtiquetaAvulsa } from "@/lib/services/etiquetaAvulsaService";
 import { gerarCodigoEtiquetaAvulsa } from "@/lib/services/etiquetaAvulsaCalculo";
-import { EtiquetaAvulsaPdfDocument } from "@/lib/pdf/etiquetaAvulsaPdf";
+import { renderPdfInWorker } from "@/lib/pdf/renderPdfInWorker";
 
 export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -19,13 +18,10 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
     );
     const qrDataUris = await Promise.all(codigos.map((codigo) => QRCode.toDataURL(codigo)));
 
-    const buffer = await renderToBuffer(
-      <EtiquetaAvulsaPdfDocument
-        descricao={etiqueta.descricao}
-        codigos={codigos}
-        qrDataUris={qrDataUris}
-      />
-    );
+    const buffer = await renderPdfInWorker({
+      type: "etiquetaAvulsa",
+      props: { descricao: etiqueta.descricao, codigos, qrDataUris },
+    });
 
     return new NextResponse(buffer, {
       status: 200,

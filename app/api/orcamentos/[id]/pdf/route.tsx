@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { getSessionRole } from "@/lib/permissions";
 import { handleApiError } from "@/lib/api-helpers";
 import { buscarOrcamento } from "@/lib/services/orcamentoService";
-import { OrcamentoPdfDocument } from "@/lib/pdf/orcamentoPdf";
+import { renderPdfInWorker } from "@/lib/pdf/renderPdfInWorker";
 
 export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -12,7 +11,7 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
 
   try {
     const orcamento = await buscarOrcamento(params.id);
-    const buffer = await renderToBuffer(<OrcamentoPdfDocument orcamento={orcamento} />);
+    const buffer = await renderPdfInWorker({ type: "orcamento", props: { orcamento } });
     const numeroSanitizado = orcamento.numero.replace(/[^A-Za-z0-9_-]/g, "");
     return new NextResponse(buffer, {
       status: 200,
