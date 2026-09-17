@@ -9,6 +9,8 @@ interface VolumeItem {
   id: string;
   numero: number;
   codigoInterno: string;
+  quantidade: number;
+  produtoDescricao: string;
   conferido: boolean;
   conferidoEm: string | null;
 }
@@ -92,6 +94,8 @@ export default function ConferenciaClient({
         <thead>
           <tr className="border-b text-gray-500">
             <th className="py-2">Código</th>
+            <th>Produto</th>
+            <th>Quantidade</th>
             <th>Status</th>
             <th>Conferido em</th>
           </tr>
@@ -100,6 +104,8 @@ export default function ConferenciaClient({
           {volumes.map((volume) => (
             <tr key={volume.id} className="border-b">
               <td className="py-2">{volume.codigoInterno}</td>
+              <td>{volume.produtoDescricao}</td>
+              <td>{volume.quantidade}</td>
               <td>
                 <span
                   className={`rounded px-2 py-1 text-xs font-medium text-white ${

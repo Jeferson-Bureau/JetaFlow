@@ -55,7 +55,6 @@ export default async function OrdemServicoDetalhePage(props: { params: Promise<{
         expedicao
           ? {
               id: expedicao.id,
-              totalVolumes: expedicao.totalVolumes,
               cep: expedicao.cep ?? "",
               endereco: expedicao.endereco ?? "",
               numero: expedicao.numero ?? "",
@@ -67,6 +66,8 @@ export default async function OrdemServicoDetalhePage(props: { params: Promise<{
                 id: v.id,
                 numero: v.numero,
                 codigoInterno: v.codigoInterno,
+                quantidade: v.quantidade,
+                orcamentoItemId: v.orcamentoItemId,
                 conferido: v.conferido,
               })),
             }

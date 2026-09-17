@@ -26,6 +26,8 @@ export default async function ConferenciaPage(props: { params: Promise<{ id: str
         id: v.id,
         numero: v.numero,
         codigoInterno: v.codigoInterno,
+        quantidade: v.quantidade,
+        produtoDescricao: v.orcamentoItem?.descricao ?? "Não informado",
         conferido: v.conferido,
         conferidoEm: v.conferidoEm ? v.conferidoEm.toISOString() : null,
       }))}

@@ -6,7 +6,10 @@ import type { ExpedicaoInput } from "@/lib/validators/expedicao";
 import type { Prisma } from "@prisma/client";
 
 const INCLUDE_VOLUMES = {
-  volumes: { orderBy: { numero: "asc" } },
+  volumes: {
+    orderBy: { numero: "asc" },
+    include: { orcamentoItem: { select: { id: true, descricao: true } } },
+  },
 } satisfies Prisma.ExpedicaoInclude;
 
 export type ExpedicaoComVolumes = Prisma.ExpedicaoGetPayload<{
@@ -32,15 +35,19 @@ export async function gerarExpedicao(
   return prisma.$transaction(async (tx) => {
     await tx.expedicao.deleteMany({ where: { ordemServicoId } });
 
-    const volumesData = Array.from({ length: input.totalVolumes }, (_, i) => {
+    const volumesData = input.volumes.map((volume, i) => {
       const numero = i + 1;
-      return { numero, codigoInterno: gerarCodigoInterno(os.numero, numero) };
+      return {
+        numero,
+        codigoInterno: gerarCodigoInterno(os.numero, numero),
+        quantidade: volume.quantidade,
+        orcamentoItemId: volume.orcamentoItemId ?? null,
+      };
     });
 
     return tx.expedicao.create({
       data: {
         ordemServicoId,
-        totalVolumes: input.totalVolumes,
         ...enderecoData,
         volumes: { create: volumesData },
       },
@@ -65,7 +72,6 @@ export async function listarExpedicoes(): Promise<ExpedicaoListada[]> {
     select: {
       id: true,
       ordemServicoId: true,
-      totalVolumes: true,
       createdAt: true,
       ordemServico: {
         select: {
@@ -82,7 +88,7 @@ export async function listarExpedicoes(): Promise<ExpedicaoListada[]> {
     ordemServicoId: e.ordemServicoId,
     numeroOS: e.ordemServico.numero,
     clienteNome: e.ordemServico.orcamento.cliente.nome,
-    totalVolumes: e.totalVolumes,
+    totalVolumes: e.volumes.length,
     volumesConferidos: e.volumes.filter((v) => v.conferido).length,
     createdAt: e.createdAt,
   }));

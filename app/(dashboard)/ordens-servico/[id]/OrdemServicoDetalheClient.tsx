@@ -19,12 +19,13 @@ interface VolumeResumo {
   id: string;
   numero: number;
   codigoInterno: string;
+  quantidade: number;
+  orcamentoItemId: string | null;
   conferido: boolean;
 }
 
 interface ExpedicaoResumo {
   id: string;
-  totalVolumes: number;
   cep: string;
   endereco: string;
   numero: string;
@@ -45,7 +46,7 @@ interface OrdemServicoDetalheClientProps {
   clienteNome: string;
   itens: ItemResumo[];
   total: number;
-  clienteEndereco: Omit<ExpedicaoResumo, "id" | "totalVolumes" | "volumes">;
+  clienteEndereco: Omit<ExpedicaoResumo, "id" | "volumes">;
   expedicao: ExpedicaoResumo | null;
 }
 
@@ -74,7 +75,10 @@ export default function OrdemServicoDetalheClient({
   const [expedicaoForm, setExpedicaoForm] = useState<ExpedicaoFormValues>(
     expedicao
       ? {
-          totalVolumes: expedicao.totalVolumes,
+          volumes: expedicao.volumes.map((v) => ({
+            orcamentoItemId: v.orcamentoItemId ?? itens[0]?.id ?? "",
+            quantidade: v.quantidade,
+          })),
           cep: expedicao.cep,
           endereco: expedicao.endereco,
           numero: expedicao.numero,
@@ -83,7 +87,12 @@ export default function OrdemServicoDetalheClient({
           cidade: expedicao.cidade,
           uf: expedicao.uf,
         }
-      : { totalVolumes: 1, ...clienteEndereco }
+      : {
+          volumes: itens.length
+            ? itens.map((item) => ({ orcamentoItemId: item.id, quantidade: item.tiragem }))
+            : [{ orcamentoItemId: "", quantidade: 1 }],
+          ...clienteEndereco,
+        }
   );
   const progresso = calcularProgressoConferencia(expedicao?.volumes ?? []);
 
@@ -235,11 +244,11 @@ export default function OrdemServicoDetalheClient({
           <div className="space-y-3">
             {expedicao && (
               <p className="text-sm text-rosa">
-                Regenerar vai apagar as {expedicao.totalVolumes} etiquetas atuais e zerar a
+                Regenerar vai apagar as {expedicao.volumes.length} etiquetas atuais e zerar a
                 conferência.
               </p>
             )}
-            <ExpedicaoForm value={expedicaoForm} onChange={setExpedicaoForm} />
+            <ExpedicaoForm value={expedicaoForm} onChange={setExpedicaoForm} itens={itens} />
             <div className="flex gap-2">
               <button
                 type="button"

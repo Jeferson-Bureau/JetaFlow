@@ -1,10 +1,14 @@
 import { z } from "zod";
 
+export const volumeInputSchema = z.object({
+  orcamentoItemId: z.string().nullable().optional(),
+  quantidade: z.number().int().positive("Quantidade deve ser maior que zero"),
+});
+
 export const expedicaoInputSchema = z.object({
-  totalVolumes: z
-    .number()
-    .int()
-    .positive("Quantidade de volumes deve ser maior que zero")
+  volumes: z
+    .array(volumeInputSchema)
+    .min(1, "Informe ao menos um volume")
     .max(500, "Máximo de 500 volumes"),
   cep: z.string().nullable().optional(),
   endereco: z.string().nullable().optional(),

@@ -16,12 +16,11 @@ describe("Expedicao/Volume schema", () => {
     const expedicao = await prisma.expedicao.create({
       data: {
         ordemServicoId: os.id,
-        totalVolumes: 2,
         cidade: "São Paulo",
         volumes: {
           create: [
-            { numero: 1, codigoInterno: "OS0001-01" },
-            { numero: 2, codigoInterno: "OS0001-02" },
+            { numero: 1, codigoInterno: "OS0001-01", quantidade: 5 },
+            { numero: 2, codigoInterno: "OS0001-02", quantidade: 5 },
           ],
         },
       },

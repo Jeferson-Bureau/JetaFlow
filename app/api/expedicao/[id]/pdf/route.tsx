@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { getSessionRole } from "@/lib/permissions";
 import { handleApiError } from "@/lib/api-helpers";
 import { buscarExpedicao } from "@/lib/services/expedicaoService";
 import { buscarOrdemServico } from "@/lib/services/ordemServicoService";
-import { EtiquetaPdfDocument } from "@/lib/pdf/etiquetaPdf";
+import { calcularDivergenciasPorItem } from "@/lib/services/expedicaoCalculo";
+import { renderPdfInWorker } from "@/lib/pdf/renderPdfInWorker";
 
 export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -19,14 +19,23 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
       expedicao.volumes.map((volume) => QRCode.toDataURL(volume.codigoInterno))
     );
 
-    const buffer = await renderToBuffer(
-      <EtiquetaPdfDocument
-        expedicao={expedicao}
-        numeroOS={os.numero}
-        clienteNome={os.orcamento.cliente.nome}
-        qrDataUris={qrDataUris}
-      />
+    const itens = os.orcamento.itens.map((item) => ({
+      id: item.id, descricao: item.descricao, tiragem: item.tiragem,
+    }));
+    const quantidadeTotalPedido = itens.reduce((soma, item) => soma + item.tiragem, 0);
+    const divergencias = calcularDivergenciasPorItem(
+      itens,
+      expedicao.volumes.map((v) => ({ orcamentoItemId: v.orcamentoItemId, quantidade: v.quantidade }))
     );
+    const divergente = divergencias.some((d) => d.divergente);
+
+    const buffer = await renderPdfInWorker({
+      type: "etiqueta",
+      props: {
+        expedicao, numeroOS: os.numero, clienteNome: os.orcamento.cliente.nome,
+        quantidadeTotalPedido, divergente, qrDataUris,
+      },
+    });
 
     return new NextResponse(buffer, {
       status: 200,
